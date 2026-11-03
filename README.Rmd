@@ -22,23 +22,36 @@ options(width = 90, pillar.width = 90)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
-georgiacivicdata is an R client for the [Georgia Civic Data](https://georgiacivicdata.org)
-API: cleaned public data about Georgia's schools and communities. It covers
-education (graduation, test scores, enrollment, attendance, school
-accountability), U.S. Census context, immigration and health, at state,
-county, school district, school and Census tract level.
+georgiacivicdata brings Georgia's public data into R. It is the R client
+for the API run by [Georgia Civic Data](https://georgiacivicdata.org).
 
-- **Tidy tibbles**, typed from each dataset's schema: codes keep their
-  leading zeros, years are integers, proportions stay on the 0-1 scale.
-- **Names beside codes**: every district, school, county and tract code
-  comes with its name, and you can filter by name (`district = "Fulton County"`).
-- **School attendance zones and district boundaries** as 'sf' objects.
-- **Locate points and addresses**: the county, tract, block group, school
-  district and zoned schools for any location in Georgia. Addresses are
-  geocoded on your computer with the U.S. Census geocoder and never reach
-  the Georgia Civic Data API.
+Georgia Civic Data gathers, organizes, and standardizes Georgia's public
+data, helping residents, parents, researchers, and professionals find
+answers in data that is already theirs. Georgia's public data is spread
+across dozens of agency websites as PDFs, spreadsheets and CSV files, and
+each source names its columns, student groups and places in its own way.
+Georgia Civic Data does that cleanup once. It puts every dataset in the
+same shape, with the same codes for counties, school districts, schools
+and demographic groups, so datasets from different agencies can be
+compared and joined. The data covers education, Census, health and
+immigration, at levels from the whole state down to single schools and
+Census tracts. Each dataset comes with a data contract that documents
+its source, its columns and the limits of the data.
 
-There is no API key and nothing to configure.
+The cleaned data is free to use through four channels: a point-and-click chart builder, a
+chatbot that answers questions in English or Spanish, a public API, and
+a connector for AI assistants. Georgia Civic Data is independent and is
+not affiliated with the State of Georgia or any of its agencies.
+
+This package works with the public API so you don't have to. You find
+datasets, read their documentation, and get rows, all from R. Results
+come back as tibbles with the right column types: codes stay text so
+leading zeros survive, years are integers, and rates are proportions
+between 0 and 1. Every school, district and county code comes with its
+name, and you can filter by name instead of code. School attendance
+zones and district boundaries come back as 'sf' objects, ready to map,
+and you can look up the schools zoned for any Georgia address. There is
+no API key and nothing to configure.
 
 ## Installation
 
