@@ -6,8 +6,9 @@
 \alias{georgiacivicdata-package}
 \title{georgiacivicdata: Access Public Data from 'Georgia Civic Data'}
 \description{
-An R client for the Georgia Civic Data REST API
-(\url{https://georgiacivicdata.org/api/v1}): cleaned public data about
+An R client for the Georgia Civic Data REST API at
+\verb{https://georgiacivicdata.org/api/v1} (documentation:
+\url{https://georgiacivicdata.org/docs}): cleaned public data about
 Georgia's schools and communities, as tidy tibbles with place names
 beside codes, typed from each dataset's schema.
 }

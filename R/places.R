@@ -62,7 +62,7 @@ fold_to <- paste0(
 #' @noRd
 normalize_place <- function(x) {
   x <- enc2utf8(as.character(x))
-  x <- gsub("[̀-ͯ]", "", x, perl = TRUE)
+  x <- gsub("[\u0300-\u036f]", "", x, perl = TRUE)
   x <- chartr(fold_from, fold_to, x)
   x <- tolower(x)
   x <- gsub("[[:space:]]+", " ", trimws(x))

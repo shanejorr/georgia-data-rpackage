@@ -3,19 +3,20 @@ Title: Access Public Data from 'Georgia Civic Data'
 Version: 0.1.0
 Authors@R: 
     person("Shane", "Orr", , "shane.j.orr@gmail.com", role = c("aut", "cre", "cph"))
-Description: A client for the 'Georgia Civic Data' REST API
-    <https://georgiacivicdata.org/api/v1>, which publishes cleaned public
+Description: A client for the 'Georgia Civic Data' REST API (documented at
+    <https://georgiacivicdata.org/docs>), which publishes cleaned public
     data about Georgia: education (graduation, assessments, enrollment,
     attendance and school accountability), U.S. Census context,
     immigration and health, at state, county, school district, school and
     Census tract level. Find datasets by topic or plain-language search,
-    read their schemas, and download filtered rows as tidy data frames
-    with place names beside codes and columns typed from each dataset's
-    schema. Also returns school attendance zones and district boundaries
-    as 'sf' objects, and finds the county, tract, school district and
-    zoned schools for points or street addresses.
+    read their column definitions, and download filtered rows as tidy data
+    frames with place names beside codes and columns typed from each
+    dataset's schema. Also returns school attendance zones and district
+    boundaries as 'sf' objects, and finds the county, tract, school
+    district and zoned schools for points or street addresses.
 License: MIT + file LICENSE
-URL: https://georgiacivicdata.org/r/, https://github.com/shanejorr/georgia-data-rpackage
+URL: https://georgiacivicdata.org/r/,
+    https://github.com/shanejorr/georgia-data-rpackage
 BugReports: https://github.com/shanejorr/georgia-data-rpackage/issues
 Depends: 
     R (>= 4.1.0)
