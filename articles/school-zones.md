@@ -6,7 +6,7 @@ article maps one district’s zones, checks which schools have no zone and
 how precise the zones are, and finds the places a location falls in.
 
 The geometry functions return ‘sf’ objects, so install ‘sf’ to map them.
-For plain tables, ‘sf’ objects, use `geometry = FALSE`.
+For plain tables, use `geometry = FALSE`.
 
 ``` r
 

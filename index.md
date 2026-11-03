@@ -5,7 +5,7 @@ client for the API run by [Georgia Civic
 Data](https://georgiacivicdata.org).
 
 [Georgia Civic Data](https://georgiacivicdata.org) gathers, organizes,
-and standardizes Georgia’s public data; helping residents, parents,
+and standardizes Georgia’s public data, helping residents, parents,
 researchers, and professionals find answers in data that is already
 theirs. We put every dataset in the same shape, with the same codes for
 counties, school districts, schools and demographic groups. Datasets
