@@ -181,7 +181,7 @@ check_place_columns <- function(name, arg, needs, columns, target, call) {
   if (length(missing)) {
     target <- target %||% "This dataset"
     abort_gcd(
-      c("{.arg {arg}} doesn't apply: {target} has no {.field {missing}} column.",
+      c("{.arg {arg}} doesn't apply: {target} has no {.field {missing}} column{?s}.",
         i = "Check the columns with {.fn gcd_columns}."),
       code = "place_not_applicable",
       call = call
@@ -280,9 +280,11 @@ abort_place_not_found <- function(input, arg, table_name, name_col,
   lead <- "No {what} named {.val {input}}."
   bullets <- character()
   if (length(districts)) {
-    lead <- "No school named {.val {input}} in {cli::qty(districts)}district{?s} {.val {districts}}."
+    where <- district_labels(districts)
+    lead <- "No school named {.val {input}} in {where}."
     if (length(elsewhere)) {
-      bullets <- c(bullets, i = "A school with that name is in {cli::qty(elsewhere)}district{?s} {.val {elsewhere}}.")
+      where_else <- district_labels(elsewhere)
+      bullets <- c(bullets, i = "A school with that name is in {where_else}.")
     }
   }
   suggestions <- place_suggestions(input, table_name, name_col, districts)
@@ -320,6 +322,15 @@ abort_place_ambiguous <- function(input, arg, lines, hint, n_districts = NULL,
   abort_gcd(c(lead, i = hint, bullets), code = "place_ambiguous",
             details = list(input = input, candidates = lines),
             call = call)
+}
+
+#' "Fulton County (660)" for district codes, from the cached table
+#' @noRd
+district_labels <- function(codes) {
+  tbl <- tryCatch(lookup_table("districts"), error = function(e) NULL)
+  names <- if (is.null(tbl)) NA else tbl$district_name[match(codes, tbl$district_code)]
+  labels <- ifelse(is.na(names), paste0("district ", codes), paste0(names, " (", codes, ")"))
+  paste(labels, collapse = ", ")
 }
 
 #' Near names from the lookup table's text search (best effort)

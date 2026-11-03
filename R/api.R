@@ -226,6 +226,7 @@ abort_service_error <- function(resp, call = rlang::caller_env(),
     if (status >= 500 || status == 429L) "gcd_error_unavailable",
     "gcd_error"
   )
+  what <- paste0(toupper(substr(what, 1, 1)), substring(what, 2))
   cli::cli_abort(
     c("{what} returned an error (HTTP {status}).",
       i = "Try again later."),
