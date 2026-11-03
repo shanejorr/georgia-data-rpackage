@@ -29,7 +29,7 @@ one district's zones, checks which schools have no zone and how precise the
 zones are, and finds the places a location falls in.
 
 The geometry functions return 'sf' objects, so install 'sf' to map them.
-For plain tables, 'sf' objects, use `geometry = FALSE`.
+For plain tables, use `geometry = FALSE`.
 
 ```{r setup, message = FALSE}
 library(georgiacivicdata)
@@ -162,7 +162,7 @@ located |>
 
 Some residences are zoned to one elementary school for the early grades and
 another for the later ones. In this case, a level has more than one school row and
-`grades` tells them apart. City Schools of Decatur, for example, Split elementary schools between K-2 and 3-5. Therefore some homes in the district will show two elementary schools:
+`grades` tells them apart. City Schools of Decatur, for example, split elementary schools between K-2 and 3-5. Therefore some homes in the district will show two elementary schools:
 
 ```{r split}
 oakhurst <- gcd_dimension("schools", district_code = "773", q = "Oakhurst",
