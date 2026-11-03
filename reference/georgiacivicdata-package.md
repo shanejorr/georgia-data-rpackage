@@ -1,7 +1,8 @@
 # georgiacivicdata: Access Public Data from 'Georgia Civic Data'
 
-An R client for the Georgia Civic Data REST API
-(<https://georgiacivicdata.org/api/v1>): cleaned public data about
+An R client for the Georgia Civic Data REST API at
+`https://georgiacivicdata.org/api/v1` (documentation:
+<https://georgiacivicdata.org/docs>): cleaned public data about
 Georgia's schools and communities, as tidy tibbles with place names
 beside codes, typed from each dataset's schema.
 
