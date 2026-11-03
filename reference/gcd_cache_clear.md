@@ -36,5 +36,7 @@ Other utilities:
 ## Examples
 
 ``` r
+if (FALSE) { # interactive()
 gcd_cache_clear()
+}
 ```

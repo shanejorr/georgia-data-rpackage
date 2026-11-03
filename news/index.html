@@ -44,8 +44,21 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="georgiacivicdata-010">georgiacivicdata 0.1.0<a class="anchor" aria-label="anchor" href="#georgiacivicdata-010"></a></h2>
 <ul><li>Initial CRAN submission.</li>
+</ul><div class="section level3">
+<h3 id="features-0-1-0">Features<a class="anchor" aria-label="anchor" href="#features-0-1-0"></a></h3>
+<ul><li>Find data: <code><a href="../reference/gcd_datasets.html">gcd_datasets()</a></code> lists the catalog and <code><a href="../reference/gcd_search.html">gcd_search()</a></code> ranks datasets from plain words, in English or Spanish.</li>
+<li>Understand a dataset: <code><a href="../reference/gcd_describe.html">gcd_describe()</a></code> (with a readable print method), <code><a href="../reference/gcd_columns.html">gcd_columns()</a></code> and <code><a href="../reference/gcd_contract.html">gcd_contract()</a></code>.</li>
+<li>Get data: <code><a href="../reference/gcd_rows.html">gcd_rows()</a></code> returns typed tibbles with place names beside codes, every category the filters don’t exclude, the API’s advisories as messages, and a <code>gcd_meta</code> attribute; large results download in full as CSV. <code><a href="../reference/gcd_values.html">gcd_values()</a></code> lists the category combinations a filter covers.</li>
+<li>Lookup tables: <code><a href="../reference/gcd_dimension.html">gcd_dimension()</a></code> returns districts, schools, counties, tracts, block groups and demographic groups.</li>
+<li>Places by name: <code>district</code>, <code>school</code> and <code>county</code> arguments match names exactly (ignoring case, accents and a trailing “County”, and including former names) and stop with candidates when a name is ambiguous.</li>
+<li>Geography: <code><a href="../reference/gcd_school_zones.html">gcd_school_zones()</a></code>, <code><a href="../reference/gcd_district_boundaries.html">gcd_district_boundaries()</a></code>, <code><a href="../reference/gcd_school_zone_status.html">gcd_school_zone_status()</a></code> and <code><a href="../reference/gcd_school_zone_coverage.html">gcd_school_zone_coverage()</a></code>, as ‘sf’ objects or plain tibbles.</li>
+<li>
+<code><a href="../reference/gcd_locate.html">gcd_locate()</a></code> finds the county, tract, block group, school district and zoned schools for points, or for addresses geocoded locally with the U.S. Census batch geocoder (addresses never reach the Georgia Civic Data API).</li>
+<li>Utilities: <code><a href="../reference/gcd_meta.html">gcd_meta()</a></code>, <code><a href="../reference/gcd_citation.html">gcd_citation()</a></code> and <code><a href="../reference/gcd_cache_clear.html">gcd_cache_clear()</a></code>, with an opt-in disk cache of row downloads that revalidates with the server’s <code>ETag</code>.</li>
 </ul></div>
-  </main></div>
+</div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">
