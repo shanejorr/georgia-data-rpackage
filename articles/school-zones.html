@@ -93,7 +93,7 @@ them. For plain tables, use <code>geometry = FALSE</code>.</p>
 <span><span class="va">zones</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">zone_level</span>, <span class="va">method</span>, <span class="va">accuracy_class</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 3 × 4</span></span>
+<span><span class="co">#&gt; # A tibble: 3 x 4</span></span>
 <span><span class="co">#&gt;   zone_level method       accuracy_class           n</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;      &lt;chr&gt;        &lt;chr&gt;                &lt;int&gt;</span></span>
 <span><span class="co">#&gt; 1 elementary official_gis authoritative_vector    45</span></span>
@@ -125,7 +125,7 @@ and why the others don’t:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">status</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gcd_school_zone_status.html">gcd_school_zone_status</a></span><span class="op">(</span>district <span class="op">=</span> <span class="st">"Atlanta Public Schools"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">status</span>, <span class="va">zone_status</span>, <span class="va">no_zone_category</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
+<span><span class="co">#&gt; # A tibble: 6 x 3</span></span>
 <span><span class="co">#&gt;   zone_status no_zone_category             n</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;       &lt;chr&gt;                    &lt;int&gt;</span></span>
 <span><span class="co">#&gt; 1 no_zone     alternative                  1</span></span>
@@ -151,7 +151,7 @@ treat them accordingly.</p>
 <span><span class="va">coverage</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">zone_level</span>, <span class="va">level_status</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_wider.html" class="external-link">pivot_wider</a></span><span class="op">(</span>names_from <span class="op">=</span> <span class="va">zone_level</span>, values_from <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 5 × 4</span></span>
+<span><span class="co">#&gt; # A tibble: 5 x 4</span></span>
 <span><span class="co">#&gt;   level_status             elementary  high middle</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;                         &lt;int&gt; &lt;int&gt;  &lt;int&gt;</span></span>
 <span><span class="co">#&gt; 1 not_available                    29     5     10</span></span>
@@ -166,12 +166,12 @@ zones cover, and the reason for anything short of complete:</p>
 <code class="sourceCode R"><span><span class="va">coverage</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">district_name</span> <span class="op">==</span> <span class="st">"Appling County"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">zone_level</span>, <span class="va">level_status</span>, <span class="va">pct_population</span>, <span class="va">methods</span>, <span class="va">reason</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 3 × 5</span></span>
-<span><span class="co">#&gt;   zone_level level_status         pct_population methods          reason</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;      &lt;chr&gt;                         &lt;dbl&gt; &lt;chr&gt;            &lt;chr&gt;</span></span>
-<span><span class="co">#&gt; 1 elementary not_available                    NA district_outline Elementary: T…</span></span>
-<span><span class="co">#&gt; 2 middle     one_school_per_grade              1 district_outline Elementary: T…</span></span>
-<span><span class="co">#&gt; 3 high       one_school_per_grade              1 district_outline Elementary: T…</span></span></code></pre></div>
+<span><span class="co">#&gt; # A tibble: 3 x 5</span></span>
+<span><span class="co">#&gt;   zone_level level_status         pct_population methods          reason        </span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;      &lt;chr&gt;                         &lt;dbl&gt; &lt;chr&gt;            &lt;chr&gt;         </span></span>
+<span><span class="co">#&gt; 1 elementary not_available                    NA district_outline Elementary: T~</span></span>
+<span><span class="co">#&gt; 2 middle     one_school_per_grade              1 district_outline Elementary: T~</span></span>
+<span><span class="co">#&gt; 3 high       one_school_per_grade              1 district_outline Elementary: T~</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="locate-a-place">Locate a place<a class="anchor" aria-label="anchor" href="#locate-a-place"></a>
@@ -190,25 +190,25 @@ one row per place.</p>
 <span><span class="op">)</span></span>
 <span><span class="va">places</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gcd_locate.html">gcd_locate</a></span><span class="op">(</span>lat <span class="op">=</span> <span class="va">landmarks</span><span class="op">$</span><span class="va">lat</span>, lon <span class="op">=</span> <span class="va">landmarks</span><span class="op">$</span><span class="va">lon</span>,</span>
 <span>                     id <span class="op">=</span> <span class="va">landmarks</span><span class="op">$</span><span class="va">landmark</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ℹ A zone is the default assignment, not the only option: a Georgia student may</span></span>
+<span><span class="co">#&gt; i A zone is the default assignment, not the only option: a Georgia student may</span></span>
 <span><span class="co">#&gt;   attend another public school by transfer, or a charter, magnet or other</span></span>
 <span><span class="co">#&gt;   choice school. See attendance_rules for the main ways.</span></span>
 <span><span class="va">places</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">id</span>, <span class="va">geographic_type</span>, <span class="va">geographic_id</span>, <span class="va">geographic_name</span>, <span class="va">grades</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 28 × 5</span></span>
+<span><span class="co">#&gt; # A tibble: 28 x 5</span></span>
 <span><span class="co">#&gt;    id                    geographic_type   geographic_id geographic_name  grades</span></span>
-<span><span class="co">#&gt;    &lt;chr&gt;                 &lt;chr&gt;             &lt;chr&gt;         &lt;chr&gt;            &lt;chr&gt;</span></span>
-<span><span class="co">#&gt;  1 Georgia State Capitol county            13121         Fulton           &lt;NA&gt;</span></span>
-<span><span class="co">#&gt;  2 Georgia State Capitol tract             13121003500   Census Tract 35  &lt;NA&gt;</span></span>
-<span><span class="co">#&gt;  3 Georgia State Capitol block_group       131210035001  Block Group 1, … &lt;NA&gt;</span></span>
-<span><span class="co">#&gt;  4 Georgia State Capitol school_district   761           Atlanta Public … &lt;NA&gt;</span></span>
-<span><span class="co">#&gt;  5 Georgia State Capitol elementary_school 761-0199      Centennial Acad… K-5</span></span>
-<span><span class="co">#&gt;  6 Georgia State Capitol middle_school     761-0199      Centennial Acad… 6-8</span></span>
-<span><span class="co">#&gt;  7 Georgia State Capitol high_school       761-4560      Midtown High Sc… 9-12</span></span>
-<span><span class="co">#&gt;  8 Stone Mountain Park   county            13089         DeKalb           &lt;NA&gt;</span></span>
-<span><span class="co">#&gt;  9 Stone Mountain Park   tract             13089021915   Census Tract 21… &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 10 Stone Mountain Park   block_group       130890219153  Block Group 3, … &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; # ℹ 18 more rows</span></span></code></pre></div>
+<span><span class="co">#&gt;    &lt;chr&gt;                 &lt;chr&gt;             &lt;chr&gt;         &lt;chr&gt;            &lt;chr&gt; </span></span>
+<span><span class="co">#&gt;  1 Georgia State Capitol county            13121         Fulton           &lt;NA&gt;  </span></span>
+<span><span class="co">#&gt;  2 Georgia State Capitol tract             13121003500   Census Tract 35  &lt;NA&gt;  </span></span>
+<span><span class="co">#&gt;  3 Georgia State Capitol block_group       131210035001  Block Group 1, ~ &lt;NA&gt;  </span></span>
+<span><span class="co">#&gt;  4 Georgia State Capitol school_district   761           Atlanta Public ~ &lt;NA&gt;  </span></span>
+<span><span class="co">#&gt;  5 Georgia State Capitol elementary_school 761-0199      Centennial Acad~ K-5   </span></span>
+<span><span class="co">#&gt;  6 Georgia State Capitol middle_school     761-0199      Centennial Acad~ 6-8   </span></span>
+<span><span class="co">#&gt;  7 Georgia State Capitol high_school       761-4560      Midtown High Sc~ 9-12  </span></span>
+<span><span class="co">#&gt;  8 Stone Mountain Park   county            13089         DeKalb           &lt;NA&gt;  </span></span>
+<span><span class="co">#&gt;  9 Stone Mountain Park   tract             13089021915   Census Tract 21~ &lt;NA&gt;  </span></span>
+<span><span class="co">#&gt; 10 Stone Mountain Park   block_group       130890219153  Block Group 3, ~ &lt;NA&gt;  </span></span>
+<span><span class="co">#&gt; # i 18 more rows</span></span></code></pre></div>
 <p>The output is long: filter it to the rows you need, such as
 <code>filter(places, geographic_type == "high_school")</code>. A
 school’s <code>geographic_id</code> is its
@@ -219,9 +219,9 @@ needs care, such as a level with no zone collected yet:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">noted</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">places</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">note</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">noted</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">id</span>, <span class="va">geographic_type</span>, <span class="va">geographic_name</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 1 × 3</span></span>
+<span><span class="co">#&gt; # A tibble: 1 x 3</span></span>
 <span><span class="co">#&gt;   id                        geographic_type   geographic_name</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;                     &lt;chr&gt;             &lt;chr&gt;</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;                     &lt;chr&gt;             &lt;chr&gt;          </span></span>
 <span><span class="co">#&gt; 1 Appling County Courthouse elementary_school &lt;NA&gt;</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/strwrap.html" class="external-link">strwrap</a></span><span class="op">(</span><span class="va">noted</span><span class="op">$</span><span class="va">note</span>, width <span class="op">=</span> <span class="fl">76</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; No elementary school zone has been collected for this district yet.</span></span>
@@ -241,31 +241,50 @@ Give one-line addresses or a data frame with <code>street</code>,
 <code class="sourceCode R"><span><span class="va">capitol</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gcd_locate.html">gcd_locate</a></span><span class="op">(</span>address <span class="op">=</span> <span class="st">"206 Washington St SW, Atlanta, GA 30334"</span><span class="op">)</span></span>
 <span><span class="va">capitol</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">match_status</span>, <span class="va">matched_address</span>, <span class="va">geographic_type</span>, <span class="va">geographic_name</span>, <span class="va">grades</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 7 × 5</span></span>
+<span><span class="co">#&gt; # A tibble: 7 x 5</span></span>
 <span><span class="co">#&gt;   match_status matched_address            geographic_type geographic_name grades</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                      &lt;chr&gt;           &lt;chr&gt;           &lt;chr&gt;</span></span>
-<span><span class="co">#&gt; 1 match        206 WASHINGTON ST SW, ATL… county          Fulton          &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 2 match        206 WASHINGTON ST SW, ATL… tract           Census Tract 35 &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 3 match        206 WASHINGTON ST SW, ATL… block_group     Block Group 1,… &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 4 match        206 WASHINGTON ST SW, ATL… school_district Atlanta Public… &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 5 match        206 WASHINGTON ST SW, ATL… elementary_sch… Centennial Aca… K-5</span></span>
-<span><span class="co">#&gt; 6 match        206 WASHINGTON ST SW, ATL… middle_school   Centennial Aca… 6-8</span></span>
-<span><span class="co">#&gt; 7 match        206 WASHINGTON ST SW, ATL… high_school     Midtown High S… 9-12</span></span></code></pre></div>
+<span><span class="co">#&gt;   &lt;chr&gt;        &lt;chr&gt;                      &lt;chr&gt;           &lt;chr&gt;           &lt;chr&gt; </span></span>
+<span><span class="co">#&gt; 1 match        206 WASHINGTON ST SW, ATL~ county          Fulton          &lt;NA&gt;  </span></span>
+<span><span class="co">#&gt; 2 match        206 WASHINGTON ST SW, ATL~ tract           Census Tract 35 &lt;NA&gt;  </span></span>
+<span><span class="co">#&gt; 3 match        206 WASHINGTON ST SW, ATL~ block_group     Block Group 1,~ &lt;NA&gt;  </span></span>
+<span><span class="co">#&gt; 4 match        206 WASHINGTON ST SW, ATL~ school_district Atlanta Public~ &lt;NA&gt;  </span></span>
+<span><span class="co">#&gt; 5 match        206 WASHINGTON ST SW, ATL~ elementary_sch~ Centennial Aca~ K-5   </span></span>
+<span><span class="co">#&gt; 6 match        206 WASHINGTON ST SW, ATL~ middle_school   Centennial Aca~ 6-8   </span></span>
+<span><span class="co">#&gt; 7 match        206 WASHINGTON ST SW, ATL~ high_school     Midtown High S~ 9-12</span></span></code></pre></div>
+<p>The same lookup for several buildings, from a data frame with one
+column per address part. <code>id</code> carries each building’s name
+into the output:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">buildings</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tribble.html" class="external-link">tribble</a></span><span class="op">(</span></span>
+<span>  <span class="op">~</span><span class="va">building</span>,                <span class="op">~</span><span class="va">street</span>,                 <span class="op">~</span><span class="va">city</span>,      <span class="op">~</span><span class="va">state</span>, <span class="op">~</span><span class="va">zip</span>,</span>
+<span>  <span class="st">"Georgia State Capitol"</span>,  <span class="st">"206 Washington St SW"</span>,  <span class="st">"Atlanta"</span>,  <span class="st">"GA"</span>,   <span class="st">"30334"</span>,</span>
+<span>  <span class="st">"Savannah City Hall"</span>,     <span class="st">"2 E Bay St"</span>,            <span class="st">"Savannah"</span>, <span class="st">"GA"</span>,   <span class="st">"31401"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">located</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gcd_locate.html">gcd_locate</a></span><span class="op">(</span>address <span class="op">=</span> <span class="va">buildings</span>, id <span class="op">=</span> <span class="va">buildings</span><span class="op">$</span><span class="va">building</span><span class="op">)</span></span>
+<span><span class="va">located</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">geographic_type</span> <span class="op">==</span> <span class="st">"high_school"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">id</span>, <span class="va">match_status</span>, <span class="va">geographic_name</span>, <span class="va">grades</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 2 x 4</span></span>
+<span><span class="co">#&gt;   id                    match_status geographic_name                      grades</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;                 &lt;chr&gt;        &lt;chr&gt;                                &lt;chr&gt; </span></span>
+<span><span class="co">#&gt; 1 Georgia State Capitol match        Midtown High School                  9-12  </span></span>
+<span><span class="co">#&gt; 2 Savannah City Hall    match        The School Of Liberal Studies At Sa~ 9-12</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="split-grade-runs">Split grade runs<a class="anchor" aria-label="anchor" href="#split-grade-runs"></a>
+<h3 id="overlapping-school-zones">Overlapping school zones<a class="anchor" aria-label="anchor" href="#overlapping-school-zones"></a>
 </h3>
-<p>Some homes are zoned to one elementary school for the early grades
-and another for the later ones. Then a level has more than one school
-row, and <code>grades</code> tells them apart. Oakhurst Elementary in
-the City Schools of Decatur teaches kindergarten to grade 2; locating
-the school itself shows both of its neighborhood’s elementary zones:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<p>Some residences are zoned to one elementary school for the early
+grades and another for the later ones. In this case, a level has more
+than one school row and <code>grades</code> tells them apart. City
+Schools of Decatur, for example, split elementary schools between K-2
+and 3-5. Therefore some homes in the district will show two elementary
+schools:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">oakhurst</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gcd_dimension.html">gcd_dimension</a></span><span class="op">(</span><span class="st">"schools"</span>, district_code <span class="op">=</span> <span class="st">"773"</span>, q <span class="op">=</span> <span class="st">"Oakhurst"</span>,</span>
 <span>                          active <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>                          columns <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"school_name"</span>, <span class="st">"latitude"</span>, <span class="st">"longitude"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">oakhurst</span></span>
-<span><span class="co">#&gt; # A tibble: 1 × 3</span></span>
+<span><span class="co">#&gt; # A tibble: 1 x 3</span></span>
 <span><span class="co">#&gt;   school_name                latitude longitude</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;                         &lt;dbl&gt;     &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1 Oakhurst Elementary School     33.8     -84.3</span></span>
@@ -274,34 +293,34 @@ the school itself shows both of its neighborhood’s elementary zones:</p>
 <span><span class="va">split</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/startsWith.html" class="external-link">endsWith</a></span><span class="op">(</span><span class="va">geographic_type</span>, <span class="st">"_school"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">geographic_type</span>, <span class="va">geographic_id</span>, <span class="va">geographic_name</span>, <span class="va">grades</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 4 × 4</span></span>
+<span><span class="co">#&gt; # A tibble: 4 x 4</span></span>
 <span><span class="co">#&gt;   geographic_type   geographic_id geographic_name                      grades</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;             &lt;chr&gt;         &lt;chr&gt;                                &lt;chr&gt;</span></span>
-<span><span class="co">#&gt; 1 elementary_school 773-0105      Oakhurst Elementary School           K-2</span></span>
-<span><span class="co">#&gt; 2 elementary_school 773-0112      Fifth Avenue Upper Elementary School 3-5</span></span>
-<span><span class="co">#&gt; 3 middle_school     773-1552      Beacon Hill Middle School            6-8</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;             &lt;chr&gt;         &lt;chr&gt;                                &lt;chr&gt; </span></span>
+<span><span class="co">#&gt; 1 elementary_school 773-0105      Oakhurst Elementary School           K-2   </span></span>
+<span><span class="co">#&gt; 2 elementary_school 773-0112      Fifth Avenue Upper Elementary School 3-5   </span></span>
+<span><span class="co">#&gt; 3 middle_school     773-1552      Beacon Hill Middle School            6-8   </span></span>
 <span><span class="co">#&gt; 4 high_school       773-3050      Decatur High School                  9-12</span></span></code></pre></div>
 <p><code>grade</code> keeps only the school for one grade:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/gcd_locate.html">gcd_locate</a></span><span class="op">(</span>lat <span class="op">=</span> <span class="va">oakhurst</span><span class="op">$</span><span class="va">latitude</span>, lon <span class="op">=</span> <span class="va">oakhurst</span><span class="op">$</span><span class="va">longitude</span>, grade <span class="op">=</span> <span class="st">"4"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/startsWith.html" class="external-link">endsWith</a></span><span class="op">(</span><span class="va">geographic_type</span>, <span class="st">"_school"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">geographic_type</span>, <span class="va">geographic_name</span>, <span class="va">grades</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 1 × 3</span></span>
+<span><span class="co">#&gt; # A tibble: 1 x 3</span></span>
 <span><span class="co">#&gt;   geographic_type   geographic_name                      grades</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;             &lt;chr&gt;                                &lt;chr&gt;</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;             &lt;chr&gt;                                &lt;chr&gt; </span></span>
 <span><span class="co">#&gt; 1 elementary_school Fifth Avenue Upper Elementary School 3-5</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="the-default-assignment">The default assignment<a class="anchor" aria-label="anchor" href="#the-default-assignment"></a>
 </h3>
 <p>A zone is the default assignment, not the only option:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">capitol</span>, <span class="st">"assignment_note"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "A zone is the default assignment, not the only option: a Georgia student may attend another public school by transfer, or a charter, magnet or other choice school. See attendance_rules for the main ways."</span></span></code></pre></div>
 <p>Students can attend another public school by transfer, or a charter,
-magnet or other choice school, and these zones are not an official
-enrollment determination: confirm an assignment with the school
-district.</p>
+magnet, or other choice school option.</p>
+<p>See Georgia Civic Data’s article <a href="https://georgiacivicdata.org/stories/school-attendance-rules" class="external-link">School
+Zones and School Choice in Georgia</a> for more information.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
