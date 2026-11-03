@@ -154,3 +154,13 @@ fixture_json <- function(file) {
 skip_if_no_mocks <- function() {
   skip_if_not_installed("httptest2")
 }
+
+# A recorded schema, read from a fixture directory, put in the session cache.
+seed_recorded <- function(file, path) {
+  seed_meta(path, jsonlite::fromJSON(test_path(file), simplifyVector = FALSE))
+}
+
+seed_grad_schema <- function() {
+  seed_recorded("m/desc/g/d/graduation_rate_4_year_cohort.json",
+                c("datasets", "graduation_rate_4_year_cohort"))
+}
