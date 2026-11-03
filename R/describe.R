@@ -127,27 +127,33 @@ gcd_contract <- function(name, file = NULL) {
   if (!is.null(file) && !is_string(file)) {
     cli::cli_abort("{.arg file} must be a single path.")
   }
-  kind <- resource_kind(name)
-  if (kind == "lookup") {
+  if (name %in% lookup_table_names()) {
     abort_gcd(
       c("Lookup tables have no contract route.",
         i = "Use {.code gcd_describe({.str {name}})} for the schema of {.val {name}}."),
       code = "no_contract"
     )
   }
-  if (kind == "geometry" && is.null(dataset_schema(name)$endpoints$contract)) {
-    abort_gcd(
-      c("The geometry dataset {.val {name}} has no contract route.",
-        i = "Use {.code gcd_describe({.str {name}})} for its fields."),
-      code = "no_contract"
-    )
-  }
   path <- c("datasets", path_segment(name), "contract")
+  call <- rlang::current_env()
+  no_contract <- function(cnd) {
+    if (identical(resource_kind(name, call = call), "geometry")) {
+      abort_gcd(
+        c("The geometry dataset {.val {name}} has no contract route.",
+          i = "Use {.code gcd_describe({.str {name}})} for its fields."),
+        code = "no_contract", call = call
+      )
+    }
+    rlang::cnd_signal(cnd)
+  }
   if (is.null(file)) {
-    return(gcd_get_meta(path, query = list(format = "json")))
+    return(tryCatch(
+      gcd_get_meta(path, query = list(format = "json")),
+      gcd_error_topic_not_found = no_contract
+    ))
   }
   req <- gcd_request(path, query = list(format = "yaml"))
-  resp <- gcd_perform(req)
+  resp <- tryCatch(gcd_perform(req), gcd_error_topic_not_found = no_contract)
   writeBin(httr2::resp_body_raw(resp), file)
   invisible(file)
 }
@@ -400,7 +406,15 @@ print.gcd_description <- function(x, ...) {
     geometry = describe_lines_geometry(x),
     describe_lines_table(x)
   )
-  cli::cat_line(lines)
+  width <- cli::console_width()
+  wrapped <- unlist(lapply(lines, function(line) {
+    if (cli::ansi_nchar(line) <= width) {
+      return(line)
+    }
+    indent <- if (startsWith(line, "* ")) 2 else 0
+    cli::ansi_strwrap(line, width = width, exdent = indent)
+  }))
+  cli::cat_line(wrapped)
   invisible(x)
 }
 
