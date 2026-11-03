@@ -1,0 +1,38 @@
+# Weekly end-to-end tests against the production Georgia Civic Data API.
+#
+# The regular check workflow replays recorded fixtures and never calls the
+# API; this one runs tests/testthat/test-live.R (GCD_LIVE_TESTS=true) once a
+# week, or on demand, to catch API changes without adding traffic to the
+# platform's usage metric on every push.
+on:
+  schedule:
+    - cron: "17 9 * * 1"
+  workflow_dispatch:
+
+name: live-api.yaml
+
+permissions: read-all
+
+jobs:
+  live-api:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      GCD_LIVE_TESTS: "true"
+      NOT_CRAN: "true"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::testthat, local::.
+          needs: check
+
+      - name: Run the live tests
+        run: testthat::test_local(filter = "live", stop_on_failure = TRUE, reporter = "check")
+        shell: Rscript {0}

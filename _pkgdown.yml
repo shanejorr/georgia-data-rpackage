@@ -1,27 +1,34 @@
 url: https://georgiacivicdata.org/r/
-
 template:
   bootstrap: 5
-  light-switch: false
+  light-switch: no
   bslib:
-    # Georgia Civic Data brand tokens (web/src/app/globals.css):
-    # primary = --color-brand-deep (red-700), links = --color-brand-accent (red-600)
-    primary: "#82171E"
-    link-color: "#9D202A"
-    body-color: "#131826"
-    secondary: "#505A6D"
-    navbar-bg: "#82171E"
-    navbar-light-color: "#FFFFFF"
-    base_font: {google: "Inter"}
-    heading_font: {google: "Figtree"}
-    code_font: {google: "JetBrains Mono"}
-
+    primary: '#82171E'
+    link-color: '#9D202A'
+    body-color: '#131826'
+    secondary: '#505A6D'
+    navbar-bg: '#82171E'
+    navbar-light-color: '#FFFFFF'
+    base_font:
+      google: Inter
+    heading_font:
+      google: Figtree
+    code_font:
+      google: JetBrains Mono
 navbar:
   bg: primary
   type: dark
   structure:
-    left: [intro, reference, articles, news]
-    right: [search, website, apidocs, github]
+    left:
+    - intro
+    - reference
+    - articles
+    - news
+    right:
+    - search
+    - website
+    - apidocs
+    - github
   components:
     website:
       text: Georgia Civic Data
@@ -31,14 +38,10 @@ navbar:
       text: API docs
       href: https://georgiacivicdata.org/docs
       aria-label: Georgia Civic Data API documentation
-
 home:
-  title: "Access Public Data from Georgia Civic Data"
-  description: >
-    An R client for the Georgia Civic Data API: education, Census,
-    immigration and health data about Georgia as tidy tibbles, school
-    attendance zones as sf objects, and point and address lookups.
-
+  title: Access Public Data from Georgia Civic Data
+  description: |
+    An R client for the Georgia Civic Data API: education, Census, immigration and health data about Georgia as tidy tibbles, school attendance zones as sf objects, and point and address lookups.
 reference:
 - title: Find data
   contents:
@@ -54,8 +57,7 @@ reference:
   - gcd_rows
   - gcd_values
 - title: Lookup tables
-  contents:
-  - gcd_dimension
+  contents: gcd_dimension
 - title: Geography and school zones
   contents:
   - gcd_school_zones
@@ -68,17 +70,18 @@ reference:
   - gcd_meta
   - gcd_citation
   - gcd_cache_clear
-
 articles:
 - title: Articles
   navbar: ~
   contents:
   - analysis
   - school-zones
-
 footer:
   structure:
-    left: [developed_by, data]
-    right: [built_with]
+    left:
+    - developed_by
+    - data
+    right: built_with
   components:
-    data: "Data: Georgia Civic Data (georgiacivicdata.org), CC BY 4.0."
+    data: 'Data: Georgia Civic Data (georgiacivicdata.org), CC BY 4.0.'
+

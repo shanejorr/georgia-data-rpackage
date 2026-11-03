@@ -15,8 +15,7 @@ Description: A client for the 'Georgia Civic Data' REST API
     as 'sf' objects, and finds the county, tract, school district and
     zoned schools for points or street addresses.
 License: MIT + file LICENSE
-URL: https://georgiacivicdata.org/r/,
-    https://github.com/shanejorr/georgia-data-rpackage
+URL: https://georgiacivicdata.org/r/, https://github.com/shanejorr/georgia-data-rpackage
 BugReports: https://github.com/shanejorr/georgia-data-rpackage/issues
 Depends: 
     R (>= 4.1.0)
