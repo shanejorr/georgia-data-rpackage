@@ -49,45 +49,113 @@ Install the development version from GitHub:
 pak::pak("shanejorr/georgia-data-rpackage")
 ```
 
-## Find data
+## Example: graduation rates in Fulton County
+
+This walkthrough answers one question from start to finish: how has the
+high school graduation rate in Fulton County Schools changed over time?
+It follows the usual workflow: find a dataset, learn what is in it,
+download the rows you need, and plot them.
+
+### Step 1: find the right dataset
+
+Every dataset has a short name, such as `graduation_rate_4_year_cohort`,
+and you need that name to get data. If you don't know it, `gcd_search()`
+searches the catalog in plain words. It matches both keywords and
+meaning, so you don't need the exact wording of a dataset's title. Each
+result has the dataset's `name`, its `title`, and the first and last
+years it covers.
 
 ```{r find}
 library(georgiacivicdata)
 
-gcd_search("high school graduation", n = 5)
+gcd_search("high school graduation", n = 5)[, c("name", "title", "year_min", "year_max")]
 ```
 
-`gcd_datasets()` lists the whole catalog, about 176 datasets.
+The four-year cohort graduation rate, `graduation_rate_4_year_cohort`,
+is the one we want: the share of students who graduate within four years
+of starting ninth grade. To browse instead of search, `gcd_datasets()`
+lists the whole catalog, about 176 datasets.
 
-## Understand a dataset
+### Step 2: learn what is in it
+
+Before downloading anything, check what each row holds. `gcd_columns()`
+lists a dataset's columns with their type, their role (a year, a place,
+a demographic group, or a measured value), and their unit.
 
 ```{r describe}
 gcd_columns("graduation_rate_4_year_cohort")[, c("column", "type", "role", "unit")]
 ```
 
-`gcd_describe()` prints everything else: source, years, detail levels,
-which columns need a single value, and the notes the data contract
-declares.
+Each row is one year, one place and one demographic group. The value we
+want is `graduation_rate`, a proportion on the 0-1 scale, so 0.9 means
+90%.
 
-## Get rows, by name or code
+`gcd_describe()` prints the rest of the dataset's documentation: its
+source, the years and detail levels it covers, and notes on how to use
+it. Those notes matter here. Georgia changed how it calculates the
+graduation rate in 2011, so the rates before and after 2011 are not
+comparable. We will start the series in 2011.
+
+### Step 3: get the rows
+
+`gcd_rows()` downloads a dataset's rows as a tibble. Filters narrow the
+request:
+
+- `district` takes a district's name and turns it into the district code
+  for you (`district_code` takes the code directly).
+- `detail = "districts"` asks for district-wide figures rather than one
+  row per school.
+- `demographic` picks the student groups; `"all"` is every student.
+- `year` picks the years.
 
 ```{r rows}
-grad <- gcd_rows(
+grads <- gcd_rows(
   "graduation_rate_4_year_cohort",
   district = "Fulton County",
   detail = "districts",
   demographic = c("all", "black", "hispanic", "white"),
-  year = 2021:2025
+  year = 2011:2025
 )
-grad
+grads
 ```
 
-Every category the filters don't exclude comes back, totals (`all`)
-beside subgroups, so the API's advisories print as messages: never add a
-total to its subgroups, and a missing value (`NA`) usually means
-**suppressed**, not zero.
+Each place comes back with both its code and its name, and each
+demographic code with a readable label. The API also prints advisories
+as messages. Here they warn that the `all` total sits beside the
+subgroups, so never add a total to its subgroups. A missing value (`NA`)
+usually means the figure was **suppressed** to protect small groups, not
+that it is zero.
+
+### Step 4: plot the overall rate
+
+The tibble works with any R tool. To plot the overall rate over time,
+keep the rows where `demographic` is `"all"` and draw a line with
+'ggplot2'.
+
+```{r grad-plot, fig.width = 7, fig.height = 4, fig.alt = "Line chart of the Fulton County Schools four-year graduation rate for all students, 2011 to 2025. The rate rises from about 70% in 2011 to about 92% in 2025."}
+library(ggplot2)
+
+grads_all <- grads[grads$demographic == "all", ]
+
+ggplot(grads_all, aes(x = year, y = graduation_rate)) +
+  geom_line(colour = "#1f5f8b", linewidth = 1) +
+  geom_point(colour = "#1f5f8b", size = 2) +
+  scale_y_continuous(labels = scales::label_percent(), limits = c(0.6, 1)) +
+  labs(
+    title = "Fulton County Schools four-year graduation rate, all students",
+    x = NULL, y = "Graduation rate",
+    caption = "Source: Georgia Civic Data (GOEWS)"
+  ) +
+  theme_minimal()
+```
 
 ## Lookup tables
+
+Shared lookup tables, called dimensions, hold the names and attributes of
+districts, schools, counties and demographic groups. `gcd_dimension()`
+returns one, with the same name filters as `gcd_rows()`. Here are the
+active high schools in Fulton County with their locale (city, suburb,
+town or rural):
 
 ```{r lookup}
 gcd_dimension("schools", district = "Fulton County", school_level = "high",
@@ -97,9 +165,11 @@ gcd_dimension("schools", district = "Fulton County", school_level = "high",
 
 ## School zones and places
 
-```{r zones, fig.width = 6, fig.height = 5, out.width = "70%", message = FALSE, fig.alt = "Map of the Atlanta Public Schools high school attendance zones."}
-library(ggplot2)
+`gcd_school_zones()` returns school attendance zones as an 'sf' object,
+ready to map. This map shows the high school zones in Atlanta Public
+Schools:
 
+```{r zones, fig.width = 6, fig.height = 5, out.width = "70%", message = FALSE, fig.alt = "Map of the Atlanta Public Schools high school attendance zones."}
 zones <- gcd_school_zones(district = "Atlanta Public Schools", zone_level = "high")
 ggplot(zones) +
   geom_sf(aes(fill = school_name), colour = "white", linewidth = 0.3) +
@@ -107,6 +177,12 @@ ggplot(zones) +
   theme_void() +
   theme(legend.text = element_text(size = 7))
 ```
+
+`gcd_locate()` goes the other way: give it an address or a point, and it
+returns the places that contain it, including the county, Census tract,
+school district and zoned schools. Addresses are geocoded on your
+computer with the U.S. Census geocoder, so only the point reaches the
+Georgia Civic Data API.
 
 ```{r locate}
 # The Georgia State Capitol
@@ -120,10 +196,10 @@ gcd_locate(address = "206 Washington St SW, Atlanta, GA 30334")[
 The data is published under the [Creative Commons Attribution 4.0
 International license (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/):
 credit Georgia Civic Data and the original source. `gcd_citation()`
-writes the citation:
+writes the citation for any result:
 
 ```{r cite}
-gcd_citation(grad)
+gcd_citation(grads)
 ```
 
 The package code is MIT-licensed.

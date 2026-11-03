@@ -39,27 +39,47 @@ Install the development version from GitHub:
 pak::pak("shanejorr/georgia-data-rpackage")
 ```
 
-## Find data
+## Example: graduation rates in Fulton County
+
+This walkthrough answers one question from start to finish: how has the
+high school graduation rate in Fulton County Schools changed over time?
+It follows the usual workflow: find a dataset, learn what is in it,
+download the rows you need, and plot them.
+
+### Step 1: find the right dataset
+
+Every dataset has a short name, such as `graduation_rate_4_year_cohort`,
+and you need that name to get data. If you don’t know it, `gcd_search()`
+searches the catalog in plain words. It matches both keywords and
+meaning, so you don’t need the exact wording of a dataset’s title. Each
+result has the dataset’s `name`, its `title`, and the first and last
+years it covers.
 
 ``` r
 library(georgiacivicdata)
 
-gcd_search("high school graduation", n = 5)
+gcd_search("high school graduation", n = 5)[, c("name", "title", "year_min", "year_max")]
 #> ℹ Lookup tables that match: "schools" and "districts". See `gcd_dimension()`.
-#> # A tibble: 5 × 11
-#>    rank name     title summary main_topic detail_levels year_min year_max score matched_on
-#>   <int> <chr>    <chr> <chr>   <chr>      <list>           <int>    <int> <dbl> <list>    
-#> 1     1 ccrpi_g… High… Georgi… education  <chr [3]>         2012     2025 0.364 <chr [7]> 
-#> 2     2 graduat… Four… Share … education  <chr [3]>         2004     2025 0.314 <chr [7]> 
-#> 3     3 high_sc… High… Counts… education  <chr [3]>         2011     2025 0.321 <chr [8]> 
-#> 4     4 postsec… Post… How ma… education  <chr [3]>         2010     2023 0.244 <chr [5]> 
-#> 5     5 postsec… Post… How ma… education  <chr [3]>         2008     2021 0.259 <chr [4]> 
-#> # ℹ 1 more variable: matched_columns <list>
+#> # A tibble: 5 × 4
+#>   name                          title                                    year_min year_max
+#>   <chr>                         <chr>                                       <int>    <int>
+#> 1 ccrpi_graduation_rate         High School Graduation Rates                 2012     2025
+#> 2 graduation_rate_4_year_cohort Four-Year Cohort Graduation Rate             2004     2025
+#> 3 high_school_completers        High School Completers                       2011     2025
+#> 4 postsecondary_c11             Postsecondary Enrollment of HS Graduate…     2010     2023
+#> 5 postsecondary_c12             Postsecondary Outcomes of HS Graduates …     2008     2021
 ```
 
-`gcd_datasets()` lists the whole catalog, about 176 datasets.
+The four-year cohort graduation rate, `graduation_rate_4_year_cohort`,
+is the one we want: the share of students who graduate within four years
+of starting ninth grade. To browse instead of search, `gcd_datasets()`
+lists the whole catalog, about 176 datasets.
 
-## Understand a dataset
+### Step 2: learn what is in it
+
+Before downloading anything, check what each row holds. `gcd_columns()`
+lists a dataset’s columns with their type, their role (a year, a place,
+a demographic group, or a measured value), and their unit.
 
 ``` r
 gcd_columns("graduation_rate_4_year_cohort")[, c("column", "type", "role", "unit")]
@@ -75,20 +95,39 @@ gcd_columns("graduation_rate_4_year_cohort")[, c("column", "type", "role", "unit
 #> 7 graduation_rate number  metric         proportion
 ```
 
-`gcd_describe()` prints everything else: source, years, detail levels,
-which columns need a single value, and the notes the data contract
-declares.
+Each row is one year, one place and one demographic group. The value we
+want is `graduation_rate`, a proportion on the 0-1 scale, so 0.9 means
+90%.
 
-## Get rows, by name or code
+`gcd_describe()` prints the rest of the dataset’s documentation: its
+source, the years and detail levels it covers, and notes on how to use
+it. Those notes matter here. Georgia changed how it calculates the
+graduation rate in 2011, so the rates before and after 2011 are not
+comparable. We will start the series in 2011.
+
+### Step 3: get the rows
+
+`gcd_rows()` downloads a dataset’s rows as a tibble. Filters narrow the
+request:
+
+- `district` takes a district’s name and turns it into the district code
+  for you (`district_code` takes the code directly).
+- `detail = "districts"` asks for district-wide figures rather than one
+  row per school.
+- `demographic` picks the student groups; `"all"` is every student.
+- `year` picks the years.
 
 ``` r
-grad <- gcd_rows(
+grads <- gcd_rows(
   "graduation_rate_4_year_cohort",
   district = "Fulton County",
   detail = "districts",
   demographic = c("all", "black", "hispanic", "white"),
-  year = 2021:2025
+  year = 2011:2025
 )
+#> ℹ This result contains NULL metric cells, which mean the value was SUPPRESSED (small
+#>   counts), not zero — do not report or chart a NULL as 0 (see null_semantics and each
+#>   column's null_meaning).
 #> ℹ Demographic groups overlap across categories and may overlap within a category
 #>   (active_duty can be a subset of military_connected). Read the dataset's definitions and
 #>   non_additive declarations. Use the published `all` total when available, never add it
@@ -96,40 +135,64 @@ grad <- gcd_rows(
 #>   generally do not add to the overall rate.
 #> ℹ `district_census_id` is a 5-digit Census school-district code, NOT a county FIPS, and a
 #>   district is not 1:1 with a county — do not map these district rows as counties.
-grad
-#> # A tibble: 20 × 11
+grads
+#> # A tibble: 60 × 11
 #>     year district_code district_name district_census_id district_type demographic
 #>    <int> <chr>         <chr>         <chr>              <chr>         <chr>      
-#>  1  2021 660           Fulton County 02280              standard      all        
-#>  2  2021 660           Fulton County 02280              standard      black      
-#>  3  2021 660           Fulton County 02280              standard      hispanic   
-#>  4  2021 660           Fulton County 02280              standard      white      
-#>  5  2022 660           Fulton County 02280              standard      all        
-#>  6  2022 660           Fulton County 02280              standard      black      
-#>  7  2022 660           Fulton County 02280              standard      hispanic   
-#>  8  2022 660           Fulton County 02280              standard      white      
-#>  9  2023 660           Fulton County 02280              standard      all        
-#> 10  2023 660           Fulton County 02280              standard      black      
-#> 11  2023 660           Fulton County 02280              standard      hispanic   
-#> 12  2023 660           Fulton County 02280              standard      white      
-#> 13  2024 660           Fulton County 02280              standard      all        
-#> 14  2024 660           Fulton County 02280              standard      black      
-#> 15  2024 660           Fulton County 02280              standard      hispanic   
-#> 16  2024 660           Fulton County 02280              standard      white      
-#> 17  2025 660           Fulton County 02280              standard      all        
-#> 18  2025 660           Fulton County 02280              standard      black      
-#> 19  2025 660           Fulton County 02280              standard      hispanic   
-#> 20  2025 660           Fulton County 02280              standard      white      
+#>  1  2011 660           Fulton County 02280              standard      all        
+#>  2  2011 660           Fulton County 02280              standard      black      
+#>  3  2011 660           Fulton County 02280              standard      hispanic   
+#>  4  2011 660           Fulton County 02280              standard      white      
+#>  5  2012 660           Fulton County 02280              standard      all        
+#>  6  2012 660           Fulton County 02280              standard      black      
+#>  7  2012 660           Fulton County 02280              standard      hispanic   
+#>  8  2012 660           Fulton County 02280              standard      white      
+#>  9  2013 660           Fulton County 02280              standard      all        
+#> 10  2013 660           Fulton County 02280              standard      black      
+#> # ℹ 50 more rows
 #> # ℹ 5 more variables: demographic_label <chr>, demographic_category <chr>,
 #> #   num_graduates <int>, num_cohort <int>, graduation_rate <dbl>
 ```
 
-Every category the filters don’t exclude comes back, totals (`all`)
-beside subgroups, so the API’s advisories print as messages: never add a
-total to its subgroups, and a missing value (`NA`) usually means
-**suppressed**, not zero.
+Each place comes back with both its code and its name, and each
+demographic code with a readable label. The API also prints advisories
+as messages. Here they warn that the `all` total sits beside the
+subgroups, so never add a total to its subgroups. A missing value (`NA`)
+usually means the figure was **suppressed** to protect small groups, not
+that it is zero.
+
+### Step 4: plot the overall rate
+
+The tibble works with any R tool. To plot the overall rate over time,
+keep the rows where `demographic` is `"all"` and draw a line with
+‘ggplot2’.
+
+``` r
+library(ggplot2)
+
+grads_all <- grads[grads$demographic == "all", ]
+
+ggplot(grads_all, aes(x = year, y = graduation_rate)) +
+  geom_line(colour = "#1f5f8b", linewidth = 1) +
+  geom_point(colour = "#1f5f8b", size = 2) +
+  scale_y_continuous(labels = scales::label_percent(), limits = c(0.6, 1)) +
+  labs(
+    title = "Fulton County Schools four-year graduation rate, all students",
+    x = NULL, y = "Graduation rate",
+    caption = "Source: Georgia Civic Data (GOEWS)"
+  ) +
+  theme_minimal()
+```
+
+<img src="man/figures/README-grad-plot-1.png" alt="Line chart of the Fulton County Schools four-year graduation rate for all students, 2011 to 2025. The rate rises from about 70% in 2011 to about 92% in 2025." width="100%" />
 
 ## Lookup tables
+
+Shared lookup tables, called dimensions, hold the names and attributes
+of districts, schools, counties and demographic groups.
+`gcd_dimension()` returns one, with the same name filters as
+`gcd_rows()`. Here are the active high schools in Fulton County with
+their locale (city, suburb, town or rural):
 
 ``` r
 gcd_dimension("schools", district = "Fulton County", school_level = "high",
@@ -153,9 +216,11 @@ gcd_dimension("schools", district = "Fulton County", school_level = "high",
 
 ## School zones and places
 
-``` r
-library(ggplot2)
+`gcd_school_zones()` returns school attendance zones as an ‘sf’ object,
+ready to map. This map shows the high school zones in Atlanta Public
+Schools:
 
+``` r
 zones <- gcd_school_zones(district = "Atlanta Public Schools", zone_level = "high")
 ggplot(zones) +
   geom_sf(aes(fill = school_name), colour = "white", linewidth = 0.3) +
@@ -165,6 +230,12 @@ ggplot(zones) +
 ```
 
 <img src="man/figures/README-zones-1.png" alt="Map of the Atlanta Public Schools high school attendance zones." width="70%" />
+
+`gcd_locate()` goes the other way: give it an address or a point, and it
+returns the places that contain it, including the county, Census tract,
+school district and zoned schools. Addresses are geocoded on your
+computer with the U.S. Census geocoder, so only the point reaches the
+Georgia Civic Data API.
 
 ``` r
 # The Georgia State Capitol
@@ -191,11 +262,11 @@ gcd_locate(address = "206 Washington St SW, Atlanta, GA 30334")[
 The data is published under the [Creative Commons Attribution 4.0
 International license (CC BY
 4.0)](https://creativecommons.org/licenses/by/4.0/): credit Georgia
-Civic Data and the original source. `gcd_citation()` writes the
-citation:
+Civic Data and the original source. `gcd_citation()` writes the citation
+for any result:
 
 ``` r
-gcd_citation(grad)
+gcd_citation(grads)
 #> [1] "Four-Year Cohort Graduation Rate. Georgia Civic Data (georgiacivicdata.org), CC BY 4.0. https://georgiacivicdata.org/api/v1/datasets/graduation_rate_4_year_cohort. Original source: Governor's Office of Education and Workforce Strategy (GOEWS, formerly GOSA)."
 ```
 
