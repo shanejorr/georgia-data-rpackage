@@ -22,7 +22,9 @@ It is only ever written when you ask for it, with \code{cache = TRUE} or
 \code{options(gcd.cache = TRUE)}.
 }
 \examples{
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 gcd_cache_clear()
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=gcd_rows]{gcd_rows()}} for the disk cache.

@@ -62,7 +62,7 @@ gcd_cache_dir <- function() {
 #' @family utilities
 #' @seealso [gcd_rows()] for the disk cache.
 #' @export
-#' @examples
+#' @examplesIf interactive()
 #' gcd_cache_clear()
 gcd_cache_clear <- function() {
   rm(list = ls(the$meta, all.names = TRUE), envir = the$meta)

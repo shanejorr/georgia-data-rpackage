@@ -60,13 +60,15 @@ write it to `.Renviron` or any file.
 | `R/datasets.R`, `R/search.R` | find data |
 | `R/describe.R` | `gcd_describe()`, `gcd_columns()`, `gcd_contract()`, the print method |
 | `R/rows.R`, `R/values.R` | get data |
-| `R/dimension.R` | lookup tables |
 | `R/zones.R` | zones, boundaries, zone status, zone coverage |
 | `R/locate.R`, `R/geocode.R` | `gcd_locate()` and the Census batch geocoder |
+| `R/dimension.R` | `gcd_dimension()` and `lookup_table()`, the cached full tables the resolver and `gcd_locate()` read |
 | `R/meta.R` | `gcd_meta()`, `gcd_citation()` |
 | `R/utils.R` | small shared helpers |
 | `tests/testthat/` | tests; recorded fixtures in short directories under `tests/testthat/` (httptest2) |
-| `vignettes/*.Rmd.orig` | vignette sources; `*.Rmd` are knitted from them (precomputed) |
+| `vignettes/*.Rmd.orig` | vignette sources; `*.Rmd` are knitted from them by `vignettes/precompile.R` (precomputed; figures land in `vignettes/`) |
+| `pkgdown/canonical.R` | adds `<link rel="canonical">` (to `georgiacivicdata.org/r/`) to every built page; run by the pkgdown workflow |
+| `.github/workflows/` | `R-CMD-check.yaml` (5-platform matrix), `pkgdown.yaml` (deploys to `gh-pages`), `rhub.yaml` (on demand), `test-coverage.yaml`, `live-api.yaml` (weekly live tests) |
 
 ## Conventions
 
@@ -166,6 +168,27 @@ write it to `.Renviron` or any file.
   (Shane's repo). `_pkgdown.yml` sets `url: https://georgiacivicdata.org/r/`.
 - No custom domain on GitHub Pages and no `CNAME` on `gh-pages`: a
   custom domain would redirect `github.io` and break the rewrite.
+
+## Gotchas learned while building
+
+- In httr2 1.3, mocked responses (`local_mocked_responses()`, httptest2)
+  bypass `req_retry()` and `req_cache()`. Offline tests check the retry and
+  cache *settings* and the callbacks; the weekly live tests exercise real
+  ETag revalidation.
+- `.Rbuildignore` lines are Perl regular expressions, not globs.
+- R code must stay ASCII: write non-ASCII as `\uXXXX` escapes, and never
+  let a tool (a Python edit, for example) expand them into raw characters.
+  `tools::showNonASCIIfile()` finds them.
+- pkgdown renders every top-level `.md` file, so the pkgdown workflow
+  deletes `CLAUDE.md` and `AGENTS.md` from its checkout before building.
+- The httptest2 redactor (`tests/testthat/helper-gcd.R`) shortens URL
+  prefixes so fixture paths stay under 100 bytes, keeps only the headers
+  the package reads, and stores YAML and GeoJSON as plain text files.
+- HTML Tidy (for the manual's HTML check) is unpacked without root into
+  `~/.local/tidy` with a wrapper at `~/.local/bin/tidy`.
+- School names repeat, and some schools have an old and a new record with
+  one name (Fulton County's "Milton High School"): use unique names such as
+  "Roswell High School" in examples.
 
 ## When to flag Shane
 
