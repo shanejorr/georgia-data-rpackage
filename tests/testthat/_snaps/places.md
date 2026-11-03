@@ -58,7 +58,7 @@
     Condition
       Error:
       ! No school named "Midtown High School" in Fulton County (660).
-      i A school with that name is in district "761".
+      i A school with that name is in Atlanta Public Schools (761).
       i Did you mean: "Roswell High School"?
       i Names match exactly (ignoring case and accents); browse with `gcd_dimension("schools", q = "midtown high school")`.
 
