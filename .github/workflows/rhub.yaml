@@ -27,6 +27,14 @@ on:
         description: 'Unique ID. You can leave this empty.'
         type: string
 
+# knitr treats any environment with CI=true as "not CRAN", so on the
+# nosuggests platform (no rmarkdown) it errors instead of writing the
+# placeholder vignette it writes on CRAN's own noSuggests check.
+# R_CRANDALF=true restores CRAN's behavior; with rmarkdown installed it
+# changes nothing.
+env:
+  R_CRANDALF: "true"
+
 jobs:
 
   setup:
