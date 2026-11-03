@@ -6,3 +6,7 @@ docs/
 georgiacivicdata.Rcheck/
 inst/doc
 docs
+
+/.quarto/
+**/*.quarto_ipynb
+README.html

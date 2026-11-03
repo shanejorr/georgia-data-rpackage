@@ -28,14 +28,14 @@ a home to its zoned elementary, middle and high school. This article maps
 one district's zones, checks which schools have no zone and how precise the
 zones are, and finds the places a location falls in.
 
+The geometry functions return 'sf' objects, so install 'sf' to map them.
+For plain tables, 'sf' objects, use `geometry = FALSE`.
+
 ```{r setup, message = FALSE}
 library(georgiacivicdata)
 library(dplyr)
 library(ggplot2)
 ```
-
-The geometry functions return 'sf' objects, so install 'sf' to map them.
-Every one also takes `geometry = FALSE` for a plain tibble.
 
 ## Map one district's zones
 
@@ -100,7 +100,7 @@ coverage |>
 
 `gcd_locate()` takes points (`lat`, `lon`) or street addresses and returns
 the county, Census tract and block group, school district and zoned schools
-each falls in, one row per place. These are public landmarks:
+each falls in, one row per place.
 
 ```{r locate-points}
 landmarks <- tibble::tribble(
@@ -143,13 +143,26 @@ capitol |>
   select(match_status, matched_address, geographic_type, geographic_name, grades)
 ```
 
-### Split grade runs
+The same lookup for several buildings, from a data frame with one column per
+address part. `id` carries each building's name into the output:
 
-Some homes are zoned to one elementary school for the early grades and
-another for the later ones. Then a level has more than one school row, and
-`grades` tells them apart. Oakhurst Elementary in the City Schools of
-Decatur teaches kindergarten to grade 2; locating the school itself shows
-both of its neighborhood's elementary zones:
+```{r address-df}
+buildings <- tibble::tribble(
+  ~building,                ~street,                 ~city,      ~state, ~zip,
+  "Georgia State Capitol",  "206 Washington St SW",  "Atlanta",  "GA",   "30334",
+  "Savannah City Hall",     "2 E Bay St",            "Savannah", "GA",   "31401"
+)
+located <- gcd_locate(address = buildings, id = buildings$building)
+located |>
+  filter(geographic_type == "high_school") |>
+  select(id, match_status, geographic_name, grades)
+```
+
+### Overlapping school zones
+
+Some residences are zoned to one elementary school for the early grades and
+another for the later ones. In this case, a level has more than one school row and
+`grades` tells them apart. City Schools of Decatur, for example, Split elementary schools between K-2 and 3-5. Therefore some homes in the district will show two elementary schools:
 
 ```{r split}
 oakhurst <- gcd_dimension("schools", district_code = "773", q = "Oakhurst",
@@ -179,6 +192,7 @@ A zone is the default assignment, not the only option:
 attr(capitol, "assignment_note")
 ```
 
-Students can attend another public school by transfer, or a charter, magnet
-or other choice school, and these zones are not an official enrollment
-determination: confirm an assignment with the school district.
+Students can attend another public school by transfer, or a charter, magnet,
+or other choice school option.
+
+See Georgia Civic Data's article [School Zones and School Choice in Georgia](https://georgiacivicdata.org/stories/school-attendance-rules) for more information.
