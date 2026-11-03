@@ -12,8 +12,8 @@ gcd_redactor <- function(x) {
     keep <- c("content-type", "etag", "x-total-count", "retry-after")
     headers <- x$headers
     type <- headers[["content-type"]] %||% headers[["Content-Type"]] %||% ""
-    if (startsWith(type, "application/yaml")) {
-      # httptest2 stores text types as plain files; YAML would be dput() bytes
+    if (startsWith(type, "application/yaml") || startsWith(type, "application/geo+json")) {
+      # httptest2 stores text types as plain files; these would be dput() bytes
       headers[["content-type"]] <- "text/plain"
       headers[["Content-Type"]] <- NULL
     }
