@@ -1,10 +1,13 @@
 # Analyzing Georgia data
 
-This article puts two datasets side by side: school district graduation
-rates from the state, and household income from the U.S. Census. It
-shows the steps any such analysis needs: pick the datasets, confirm they
-share a join key and years, pool rates from their counts, and respect
-breaks in a series.
+This article puts two datasets side by side: infant mortality from the
+Georgia Department of Public Health, and the poverty rate from the U.S.
+Census. Infant mortality, the number of babies who die before their
+first birthday per 1,000 live births, is one of the most widely used
+measures of a community’s health. The article shows the steps any such
+analysis needs: pick the datasets, confirm they share a join key and
+years, read the dataset’s notes, pool rates from their counts, and
+respect breaks in a series.
 
 ``` r
 
@@ -17,380 +20,434 @@ library(ggplot2)
 
 ``` r
 
-gcd_search("high school graduation rate", n = 3) |> select(name, title, year_min, year_max)
-#> ℹ Lookup tables that match: "schools" and "districts". See `gcd_dimension()`.
+gcd_search("infant mortality", n = 3) |> select(name, title, year_min, year_max)
 #> # A tibble: 3 × 4
-#>   name                          title                          year_min year_max
-#>   <chr>                         <chr>                             <int>    <int>
-#> 1 ccrpi_graduation_rate         High School Graduation Rates       2012     2025
-#> 2 graduation_rate_4_year_cohort Four-Year Cohort Graduation R…     2004     2025
-#> 3 high_school_completers        High School Completers             2011     2025
-gcd_search("household income", level = "districts", n = 3) |> select(name, title, year_min, year_max)
-#> ℹ Lookup tables that match: "block_groups". See `gcd_dimension()`.
+#>   name           title                                         year_min year_max
+#>   <chr>          <chr>                                            <int>    <int>
+#> 1 infant_deaths  Infant Deaths and Infant Mortality Rates          2000     2025
+#> 2 fetal_deaths   Fetal Deaths and Fetal Mortality Rates            2000     2025
+#> 3 birth_outcomes Birth Outcomes (Low Birthweight and Preterm …     2000     2025
+gcd_search("poverty rate", level = "counties", n = 3) |> select(name, title, year_min, year_max)
 #> # A tibble: 3 × 4
-#>   name                      title                              year_min year_max
-#>   <chr>                     <chr>                                 <int>    <int>
-#> 1 median_household_income   Median Household Income (ACS)          2020     2024
-#> 2 median_income_by_nativity Median Individual Income by Place…     2020     2024
-#> 3 direct_certification      Direct Certification for Free Sch…     2014     2025
+#>   name                         title                           year_min year_max
+#>   <chr>                        <chr>                              <int>    <int>
+#> 1 poverty                      Poverty (ACS)                       2020     2024
+#> 2 poverty_by_nativity          Poverty by Nativity and Citize…     2020     2024
+#> 3 low_income_low_access_tracts Low-Income, Low-Access Tracts …     2025     2025
 ```
 
-`graduation_rate_4_year_cohort` is the four-year cohort graduation rate
-published by the Governor’s Office of Education and Workforce Strategy;
-`median_household_income` is the American Community Survey (ACS) 5-year
-estimate. Before joining them, check that they share a detail level and
-a key, and which years they cover:
+`infant_deaths` holds infant deaths and live births from the state’s
+OASIS system, by county of residence; `poverty` is the American
+Community Survey (ACS) 5-year estimate of the share of people below the
+federal poverty line. Before joining them, check that they share a
+detail level and a key, and which years they cover:
 
 ``` r
 
-grad_info <- gcd_describe("graduation_rate_4_year_cohort")
-income_info <- gcd_describe("median_household_income")
+infant_info <- gcd_describe("infant_deaths")
+poverty_info <- gcd_describe("poverty")
 
-intersect(grad_info$detail_levels, income_info$detail_levels)
-#> [1] "districts" "states"
-intersect(grad_info$grain, income_info$grain)
-#> [1] "year"          "district_code"
-range(grad_info$years)
-#> [1] 2004 2025
-range(income_info$years)
+intersect(infant_info$detail_levels, poverty_info$detail_levels)
+#> [1] "counties" "states"
+intersect(infant_info$grain, poverty_info$grain)
+#> [1] "year"        "county_fips" "tract_geoid"
+range(infant_info$years)
+#> [1] 2000 2025
+range(poverty_info$years)
 #> [1] 2020 2024
 ```
 
-Both publish district rows keyed by `district_code`. The ACS figures are
+Both publish county rows keyed by `county_fips`. The ACS figures are
 5-year estimates named by their end year, so the 2024 vintage pools
-survey responses from 2020 to 2024. We match it with the graduating
-classes of 2020 to 2024.
+survey responses from 2020 to 2024. We match it with the infant deaths
+of 2020 to 2024.
 
-The graduation schema also declares a series break, which matters for
-any trend:
+## Read the notes first
+
+The dataset’s notes say which columns can’t be added up. Causes and ages
+at death nest inside each other (`all` contains every cause, and
+`neonatal` contains `early_neonatal`), so summing across them counts the
+same deaths more than once:
 
 ``` r
 
-grad_info$notes$series_breaks
-#> # A tibble: 1 × 2
-#>    year reason                                                                  
-#>   <int> <chr>                                                                   
-#> 1  2011 From 2011 Georgia reports the federal four-year adjusted-cohort graduat…
+infant_info$notes$non_additive$column
+#> [1] "cause"        "age_at_death"
 ```
 
-## Pool graduation rates from their counts
-
-A district’s rate over several years is the sum of its graduates over
-the sum of its cohorts, not the average of its yearly rates.
-[`gcd_columns()`](https://georgiacivicdata.org/r/reference/gcd_columns.md)
-names the numerator and denominator:
+Pinning both to `all` gives one row per county, year and group. The
+notes also set a floor on any figure we compute ourselves:
 
 ``` r
 
-gcd_columns("graduation_rate_4_year_cohort") |>
+infant_info$notes$pooled_min_count$reason
+#> [1] "OASIS withholds rates based on 1-4 deaths (shown as * on OASIS), so no figure combined from fewer than 5 deaths is given."
+```
+
+## Pool infant mortality from counts
+
+[`gcd_columns()`](https://georgiacivicdata.org/r/reference/gcd_columns.md)
+names the numerator and denominator of the rate:
+
+``` r
+
+gcd_columns("infant_deaths") |>
   filter(!is.na(metric_component)) |>
   select(column, metric_component)
 #> # A tibble: 2 × 2
-#>   column        metric_component
-#>   <chr>         <chr>           
-#> 1 num_graduates numerator       
-#> 2 num_cohort    denominator
+#>   column     metric_component
+#>   <chr>      <chr>           
+#> 1 num_deaths numerator       
+#> 2 num_births denominator
 ```
 
 ``` r
 
-grad <- gcd_rows(
-  "graduation_rate_4_year_cohort",
-  detail = "districts",
+infant <- gcd_rows(
+  "infant_deaths",
+  detail = "counties",
   demographic = "all",
-  district_type = "standard",
+  cause = "all",
+  age_at_death = "all",
   year = 2020:2024,
   quiet = TRUE
 )
 
-pooled <- grad |>
-  filter(!is.na(num_graduates), !is.na(num_cohort)) |>
-  group_by(district_code, district_name) |>
+infant |>
+  summarise(county_years = n(),
+            with_a_rate = sum(!is.na(death_rate_per_1k_births)),
+            median_births = median(num_births))
+#> # A tibble: 1 × 3
+#>   county_years with_a_rate median_births
+#>          <int>       <int>         <int>
+#> 1          795         385           258
+```
+
+Infant deaths are rare, and most of Georgia’s 159 counties are small: in
+a typical county-year a few hundred babies are born, and a single death
+moves the rate by several points. That is why about half of the
+county-years have no published rate at all. A county’s rate over several
+years is the sum of its deaths over the sum of its births, not the
+average of its yearly rates:
+
+``` r
+
+pooled <- infant |>
+  group_by(county_fips, county_name) |>
   summarise(
-    years = n(),
-    graduates = sum(num_graduates),
-    cohort = sum(num_cohort),
+    deaths = sum(num_deaths),
+    births = sum(num_births),
     .groups = "drop"
   ) |>
-  mutate(graduation_rate = graduates / cohort)
+  mutate(infant_mortality = 1000 * deaths / births)
 
-pooled
-#> # A tibble: 179 × 6
-#>    district_code district_name   years graduates cohort graduation_rate
-#>    <chr>         <chr>           <int>     <int>  <int>           <dbl>
-#>  1 601           Appling County      5      1100   1197           0.919
-#>  2 602           Atkinson County     5       520    549           0.947
-#>  3 603           Bacon County        5       688    722           0.953
-#>  4 604           Baker County        4        81     92           0.880
-#>  5 605           Baldwin County      5      1199   1390           0.863
-#>  6 606           Banks County        5       900   1017           0.885
-#>  7 607           Barrow County       5      4294   4782           0.898
-#>  8 608           Bartow County       5      4336   4618           0.939
-#>  9 609           Ben Hill County     5       920   1088           0.846
-#> 10 610           Berrien County      5       961   1093           0.879
-#> # ℹ 169 more rows
+pooled |> arrange(desc(births))
+#> # A tibble: 159 × 5
+#>    county_fips county_name deaths births infant_mortality
+#>    <chr>       <chr>        <int>  <int>            <dbl>
+#>  1 13135       Gwinnett       323  56843             5.68
+#>  2 13121       Fulton         389  56491             6.89
+#>  3 13089       DeKalb         299  49609             6.03
+#>  4 13067       Cobb           229  43244             5.30
+#>  5 13063       Clayton        177  19212             9.21
+#>  6 13051       Chatham        133  17899             7.43
+#>  7 13057       Cherokee        59  15278             3.86
+#>  8 13139       Hall            76  13787             5.51
+#>  9 13245       Richmond       135  13110            10.3 
+#> 10 13151       Henry           77  13077             5.89
+#> # ℹ 149 more rows
+sum(pooled$deaths < 5)
+#> [1] 41
 ```
 
-`district_type = "standard"` keeps the 180 city and county districts,
-the only ones the Census publishes estimates for (charter and state
-districts have no Census geography).
+Even pooled over five years, 41 counties had fewer than five infant
+deaths, too few for a rate under the dataset’s own rule. We keep their
+counts for the group sums below but leave them out of any county-level
+figure.
 
-Pooling and averaging give different answers whenever districts differ
-in size. Here is 2024 for every kind of district, set against the
-published state row:
+Pooling and averaging give different answers whenever counties differ in
+size. Here is the comparison with the published state rows:
 
 ``` r
 
-state_2024 <- gcd_rows("graduation_rate_4_year_cohort", detail = "states",
-                       demographic = "all", year = 2024, quiet = TRUE)
-districts_2024 <- gcd_rows("graduation_rate_4_year_cohort", detail = "districts",
-                           demographic = "all", year = 2024, quiet = TRUE) |>
-  filter(!is.na(num_graduates), !is.na(num_cohort))
+state <- gcd_rows("infant_deaths", detail = "states", demographic = "all",
+                  cause = "all", age_at_death = "all", year = 2020:2024,
+                  quiet = TRUE)
 
-districts_2024 |>
+pooled |>
   summarise(
-    mean_of_district_rates = mean(graduation_rate),
-    pooled_from_counts = sum(num_graduates) / sum(num_cohort),
-    cohort_counted = sum(num_cohort)
+    mean_of_county_rates = mean(infant_mortality),
+    pooled_from_counts = 1000 * sum(deaths) / sum(births),
+    births_counted = sum(births)
   ) |>
-  mutate(published_state_rate = state_2024$graduation_rate,
-         published_state_cohort = state_2024$num_cohort) |>
+  mutate(state_pooled = 1000 * sum(state$num_deaths) / sum(state$num_births),
+         state_births = sum(state$num_births)) |>
   as.data.frame()
-#>   mean_of_district_rates pooled_from_counts cohort_counted published_state_rate
-#> 1              0.8942126          0.8668116         135695               0.8544
-#>   published_state_cohort
-#> 1                 137710
-
-districts_2024 |>
-  group_by(district_type) |>
-  summarise(districts = n(), cohort = sum(num_cohort),
-            graduation_rate = sum(num_graduates) / sum(num_cohort))
-#> # A tibble: 3 × 4
-#>   district_type      districts cohort graduation_rate
-#>   <chr>                  <int>  <int>           <dbl>
-#> 1 commission_charter         7    293           0.935
-#> 2 standard                 178 130073           0.890
-#> 3 state_charter              6   5329           0.294
+#>   mean_of_county_rates pooled_from_counts births_counted state_pooled
+#> 1             6.939697            6.65106         623660      6.65106
+#>   state_births
+#> 1       623660
 ```
 
-Pooled from counts, the districts come within about a point of the
-published state rate. The cohort counted here is about 2,000 students
-short of the state’s, because some district rows have missing counts and
-drop out of the sums. The plain mean of district rates is further off,
-because it weighs a district of a few dozen students like one of
-thousands. The table by district type shows why the standard districts
-alone sit above the state rate: the state charter districts, with about
-5,000 students in the cohort, graduate far fewer of them.
+The counties add up to the state row exactly, so the rate pooled from
+county counts matches the state’s. The plain mean of county rates is
+further off, because it weighs a county with a hundred births like one
+with fifty thousand.
 
-## Join household income
+## Join the poverty rate
 
 ``` r
 
-income <- gcd_rows(
-  "median_household_income",
-  detail = "districts",
+poverty <- gcd_rows(
+  "poverty",
+  detail = "counties",
   year = 2024,
   race_iteration = "all",
   quiet = TRUE
 ) |>
-  select(district_code, median_household_income, median_household_income_moe)
+  select(county_fips, poverty_rate, poverty_rate_moe)
 
-joined <- inner_join(pooled, income, by = "district_code")
+joined <- inner_join(pooled, poverty, by = "county_fips")
 nrow(joined)
-#> [1] 179
+#> [1] 159
 ```
 
-Medians can’t be pooled or averaged across districts, so income stays
-one value per district. The ACS reports a 90% margin of error beside
-each estimate; for small districts it can be a sizable share of the
-estimate:
+The ACS reports a 90% margin of error beside each estimate; for small
+counties it can be a sizable share of the estimate:
 
 ``` r
 
 joined |>
-  mutate(moe_share = median_household_income_moe / median_household_income) |>
+  mutate(moe_share = poverty_rate_moe / poverty_rate) |>
   summarise(median_moe_share = median(moe_share), max_moe_share = max(moe_share))
 #> # A tibble: 1 × 2
 #>   median_moe_share max_moe_share
 #>              <dbl>         <dbl>
-#> 1           0.0935         0.475
+#> 1            0.190         0.507
 ```
 
 ``` r
 
-ggplot(joined, aes(median_household_income, graduation_rate)) +
-  geom_point(aes(size = cohort), alpha = 0.5, colour = "#b91c1c") +
-  geom_smooth(method = "loess", formula = y ~ x, se = FALSE, colour = "grey30") +
-  scale_x_log10(labels = scales::label_dollar(accuracy = 1)) +
-  scale_y_continuous(labels = scales::label_percent()) +
+rated <- filter(joined, deaths >= 5)
+
+ggplot(rated, aes(poverty_rate, infant_mortality)) +
+  geom_point(aes(size = births), alpha = 0.5, colour = "#b91c1c") +
+  geom_smooth(aes(weight = births), method = "loess", formula = y ~ x,
+              se = FALSE, colour = "grey30") +
+  scale_x_continuous(labels = scales::label_percent()) +
   scale_size_area(max_size = 8, labels = scales::label_comma()) +
   labs(
-    x = "Median household income, 2020-2024 (log scale)",
-    y = "Four-year graduation rate, classes of 2020-2024",
-    size = "Students in\ncohorts",
-    title = "Georgia school districts: graduation rate and household income"
+    x = "Share of people below the poverty line, 2020-2024",
+    y = "Infant deaths per 1,000 live births, 2020-2024",
+    size = "Live births",
+    title = "Georgia counties: infant mortality and poverty"
   ) +
   theme_minimal()
 ```
 
-![Scatter plot of district graduation rates against median household
-income.](analysis-scatter-1.png)
+![Scatter plot of county infant mortality rates against county poverty
+rates.](analysis-scatter-1.png)
 
-Each point is a standard school district, sized by its cohorts.
+Each point is a county with at least five infant deaths in 2020-2024,
+sized by its births.
 
 ``` r
 
-cor(joined$median_household_income, joined$graduation_rate, method = "spearman")
-#> [1] 0.2288482
+cor(rated$poverty_rate, rated$infant_mortality, method = "spearman")
+#> [1] 0.3697077
 ```
 
+County by county the association is modest, a rank correlation of 0.37,
+partly because even five-year rates in small counties carry a lot of
+chance variation. Grouping counties by their poverty rate and pooling
+each group’s counts gives steadier rates. Every county counts here,
+including those with too few deaths for a rate of their own:
+
 ``` r
 
-joined |>
-  mutate(income_third = cut(
-    median_household_income,
-    quantile(median_household_income, c(0, 1 / 3, 2 / 3, 1)),
+thirds <- joined |>
+  mutate(poverty_group = cut(
+    poverty_rate,
+    quantile(poverty_rate, c(0, 1 / 3, 2 / 3, 1)),
     labels = c("Lowest third", "Middle third", "Highest third"),
     include.lowest = TRUE
-  )) |>
-  group_by(income_third) |>
-  summarise(districts = n(),
-            lowest_rate = min(graduation_rate),
-            median_rate = median(graduation_rate),
-            highest_rate = max(graduation_rate))
+  ))
+
+thirds |>
+  group_by(poverty_group) |>
+  summarise(counties = n(),
+            deaths = sum(deaths),
+            births = sum(births),
+            infant_mortality = 1000 * deaths / births)
 #> # A tibble: 3 × 5
-#>   income_third  districts lowest_rate median_rate highest_rate
-#>   <fct>             <int>       <dbl>       <dbl>        <dbl>
-#> 1 Lowest third         60       0.807       0.896        0.989
-#> 2 Middle third         59       0.764       0.911        0.996
-#> 3 Highest third        60       0.765       0.919        0.983
+#>   poverty_group counties deaths births infant_mortality
+#>   <fct>            <int>  <int>  <int>            <dbl>
+#> 1 Lowest third        53   2345 395522             5.93
+#> 2 Middle third        53   1229 155432             7.91
+#> 3 Highest third       53    574  72706             7.89
 ```
 
-The rank correlation is 0.23, a weak positive association: across
-districts, higher household incomes go with somewhat higher graduation
-rates, but the spread within each income group is far wider than the
-difference between groups.
+Babies born in the middle and highest-poverty thirds of counties die
+before their first birthday at a rate about a third higher than babies
+born in the lowest-poverty third. The lowest-poverty third holds most of
+the state’s births, so it sets the state’s rate.
 
-## A trend that respects the series
+## Poverty and race
 
-To follow the pattern over time, group districts by their 2020-2024
-income and pool each group’s graduation rate by year. Two rules from the
-schema decide which years can be used:
-
-- the **series break** in 2011: earlier years use a different method, so
-  the trend can’t run across it;
-- the limitations note that `num_cohort` is **missing in every row from
-  2012 to 2016**, so those years can’t be pooled from counts.
+Infant mortality in Georgia differs most of all by race. The
+`demographic` filter gives the same counts for each racial and ethnic
+group; `black` and `white` are non-Hispanic. Pooling them within the
+same county poverty groups asks whether the county’s poverty rate
+accounts for the gap:
 
 ``` r
 
-first_year <- max(grad_info$notes$series_breaks$year)
-
-grad_years <- gcd_rows(
-  "graduation_rate_4_year_cohort",
-  detail = "districts",
-  demographic = "all",
-  district_type = "standard",
-  year = first_year:max(grad_info$years),
+infant_race <- gcd_rows(
+  "infant_deaths",
+  detail = "counties",
+  demographic = c("black", "white"),
+  cause = "all",
+  age_at_death = "all",
+  year = 2020:2024,
   quiet = TRUE
 )
 
-groups <- joined |>
-  mutate(income_group = cut(
-    median_household_income,
-    quantile(median_household_income, c(0, 1 / 3, 2 / 3, 1)),
-    labels = c("Lowest third", "Middle third", "Highest third"),
-    include.lowest = TRUE
-  )) |>
-  select(district_code, income_group)
+by_race <- infant_race |>
+  inner_join(select(thirds, county_fips, poverty_group), by = "county_fips") |>
+  group_by(poverty_group, demographic_label) |>
+  summarise(deaths = sum(num_deaths),
+            births = sum(num_births),
+            infant_mortality = 1000 * deaths / births,
+            .groups = "drop")
 
-trend <- grad_years |>
-  inner_join(groups, by = "district_code") |>
-  filter(!is.na(num_graduates), !is.na(num_cohort)) |>
-  group_by(year, income_group) |>
-  summarise(graduation_rate = sum(num_graduates) / sum(num_cohort),
-            districts = n(), .groups = "drop")
-
-trend |> count(year, name = "groups")
-#> # A tibble: 10 × 2
-#>     year groups
-#>    <int>  <int>
-#>  1  2011      3
-#>  2  2017      3
-#>  3  2018      3
-#>  4  2019      3
-#>  5  2020      3
-#>  6  2021      3
-#>  7  2022      3
-#>  8  2023      3
-#>  9  2024      3
-#> 10  2025      3
+by_race
+#> # A tibble: 6 × 5
+#>   poverty_group demographic_label deaths births infant_mortality
+#>   <fct>         <chr>              <int>  <int>            <dbl>
+#> 1 Lowest third  Black               1104 118808             9.29
+#> 2 Lowest third  White                747 166021             4.50
+#> 3 Middle third  Black                684  56954            12.0 
+#> 4 Middle third  White                399  67186             5.94
+#> 5 Highest third Black                362  29989            12.1 
+#> 6 Highest third White                165  32237             5.12
 ```
 
 ``` r
 
-# no line across 2012-2016, the years with nothing to pool
-ggplot(trend, aes(year, graduation_rate, colour = income_group)) +
-  geom_line(data = filter(trend, year >= 2017), linewidth = 0.8) +
-  geom_point(size = 1.5) +
-  scale_y_continuous(labels = scales::label_percent()) +
-  scale_colour_manual(values = c("#fca5a5", "#ef4444", "#7f1d1d")) +
+ggplot(by_race, aes(poverty_group, infant_mortality, fill = demographic_label)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.7) +
+  scale_fill_manual(values = c("#7f1d1d", "#fca5a5")) +
   labs(
-    x = NULL, y = "Pooled four-year graduation rate",
-    colour = "Districts by 2020-2024\nmedian household income",
-    title = "Graduation rates by district income group",
-    caption = "Classes of 2011 and 2017 on: earlier years use another method,\nand 2012-2016 publish no cohort counts to pool."
+    x = "Counties by 2020-2024 poverty rate",
+    y = "Infant deaths per 1,000 live births",
+    fill = NULL,
+    title = "Infant mortality by race within county poverty groups"
   ) +
   theme_minimal()
 ```
 
-![Line chart of pooled graduation rates by district income group, by
-year.](analysis-trend-1.png)
+![Bar chart of infant mortality for Black and white infants within each
+county poverty group.](analysis-race-plot-1.png)
 
-Graduation rates pooled from counts, by district income group.
+Infant mortality pooled from counts, 2020-2024, by county poverty group
+and race.
+
+In every poverty group, Black infants die at about twice the rate of
+white infants. Black infants in the lowest-poverty counties die at a
+higher rate than white infants in the highest-poverty counties. County
+poverty goes with higher rates for Black infants, but it does not
+explain the gap between the two groups.
+
+## A trend that respects the series
+
+To follow the gap over time, use the state rows, where the counts are
+large enough for yearly rates. The notes decide which years can be
+compared:
+
+- Births to multiracial mothers jumped from hundreds a year to thousands
+  in 2007 and 2008 while births to white mothers fell, most likely from
+  Georgia’s revised birth certificate. Death records kept the infant’s
+  race, so race-group rates in those years mix a recording change with
+  real change. For counties, the notes advise comparing race-group rates
+  over time from 2013 on; we use the same start for the state.
+- OASIS says the 2010 rate is low from under-reporting, another reason
+  to start after it.
 
 ``` r
 
-trend |>
-  select(year, income_group, graduation_rate) |>
-  tidyr::pivot_wider(names_from = income_group, values_from = graduation_rate)
-#> # A tibble: 10 × 4
-#>     year `Lowest third` `Middle third` `Highest third`
-#>    <int>          <dbl>          <dbl>           <dbl>
-#>  1  2011          0.650          0.650           0.694
-#>  2  2017          0.831          0.824           0.845
-#>  3  2018          0.854          0.842           0.856
-#>  4  2019          0.856          0.838           0.859
-#>  5  2020          0.871          0.860           0.876
-#>  6  2021          0.879          0.859           0.875
-#>  7  2022          0.885          0.861           0.878
-#>  8  2023          0.894          0.873           0.880
-#>  9  2024          0.889          0.886           0.891
-#> 10  2025          0.916          0.901           0.903
+state_race <- gcd_rows(
+  "infant_deaths",
+  detail = "states",
+  demographic = c("black", "white"),
+  cause = "all",
+  age_at_death = "all",
+  year = 2013:max(infant_info$years),
+  quiet = TRUE
+)
 ```
 
-All three groups rose by more than 20 points between the classes of 2011
-and 2025. In 2011 the highest-income third led the other two; by the
-classes of 2021 to 2025 the three groups sit within a few points of each
-other, and the lowest-income third is at or near the top. These pooled
-rates weigh districts by their cohorts: five large metro Atlanta
-districts (Gwinnett, Cobb, Fulton, DeKalb and Forsyth) hold almost half
-of the highest-income group’s students, while the correlation above
-counts every district once. The two views answer different questions.
+``` r
+
+ggplot(state_race, aes(year, death_rate_per_1k_births, colour = demographic_label)) +
+  geom_line(linewidth = 0.8) +
+  geom_point(size = 1.5) +
+  scale_colour_manual(values = c("#7f1d1d", "#fca5a5")) +
+  scale_x_continuous(breaks = seq(2013, 2025, by = 2)) +
+  expand_limits(y = 0) +
+  labs(
+    x = NULL, y = "Infant deaths per 1,000 live births",
+    colour = NULL,
+    title = "Georgia infant mortality by race",
+    caption = "Non-Hispanic Black and white infants. Deaths by the infant's race,\nbirths by the mother's race."
+  ) +
+  theme_minimal()
+```
+
+![Line chart of Georgia's infant mortality rates for Black and white
+infants by year since 2013.](analysis-trend-1.png)
+
+Georgia’s published infant mortality rates by race, 2013 on.
+
+Yearly rates still move by a point or more from chance. Pooling a few
+years at a time steadies them:
+
+``` r
+
+state_race |>
+  mutate(period = cut(year, c(2012, 2016, 2020, 2025),
+                      labels = c("2013-2016", "2017-2020", "2021-2025"))) |>
+  group_by(period, demographic) |>
+  summarise(infant_mortality = 1000 * sum(num_deaths) / sum(num_births),
+            .groups = "drop") |>
+  tidyr::pivot_wider(names_from = demographic, values_from = infant_mortality) |>
+  mutate(ratio = black / white)
+#> # A tibble: 3 × 4
+#>   period    black white ratio
+#>   <fct>     <dbl> <dbl> <dbl>
+#> 1 2013-2016  12.4  5.46  2.27
+#> 2 2017-2020  11.0  5.05  2.17
+#> 3 2021-2025  10.9  4.82  2.25
+```
+
+The white rate has edged down since the mid-2010s. The Black rate fell
+to its lowest in 2020 and 2021 and then rose again. Throughout, the
+Black rate has stayed a little more than twice the white rate.
 
 ## What these figures can’t tell
 
-- **Association, not causation.** Income is one of many ways districts
-  differ; nothing here says income raises graduation rates.
-- **Districts are not families.** Median household income describes
-  every household in a district, most without school-age children, and
-  says nothing about the students within it.
-- **Income groups are fixed at 2020-2024.** Districts may have sat in a
-  different group in 2011, and ACS dollars are in each vintage’s own
-  prices.
-- **Estimates carry error.** Each ACS median has a margin of error,
-  larger in small districts; a district near a group boundary could sit
-  in either.
-- **Cohort rates count on-time graduates** of each district’s adjusted
-  cohort; they don’t follow students who transfer to charter, private or
-  out-of-state schools.
+- **Association, not causation.** Poverty is one of many ways counties
+  differ; nothing here says a county’s poverty rate causes infant
+  deaths.
+- **Counties are not families.** A county’s poverty rate describes all
+  of its residents, not the families of the babies born there.
+- **Estimates carry error.** The ACS poverty rate is a survey estimate
+  with a margin of error, larger in small counties; a county near a
+  group boundary could sit in either.
+- **Race is recorded twice.** Deaths carry the infant’s race from the
+  death certificate and births the mother’s from the birth certificate,
+  so a group’s rate can be biased where the two differ.
+- **Small counts swing.** A county’s rate on a few deaths says little on
+  its own; group and pool before comparing places.
+- **Infant mortality has many causes.** The dataset’s `cause` and
+  `age_at_death` filters split deaths into prematurity, birth defects,
+  sudden infant death and others, which this article does not look at.

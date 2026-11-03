@@ -5,15 +5,15 @@ assign a home to its zoned elementary, middle and high school. This
 article maps one district’s zones, checks which schools have no zone and
 how precise the zones are, and finds the places a location falls in.
 
+The geometry functions return ‘sf’ objects, so install ‘sf’ to map them.
+For plain tables, ‘sf’ objects, use `geometry = FALSE`.
+
 ``` r
 
 library(georgiacivicdata)
 library(dplyr)
 library(ggplot2)
 ```
-
-The geometry functions return ‘sf’ objects, so install ‘sf’ to map them.
-Every one also takes `geometry = FALSE` for a plain tibble.
 
 ## Map one district’s zones
 
@@ -109,8 +109,8 @@ coverage |>
   filter(district_name == "Appling County") |>
   select(zone_level, level_status, pct_population, methods, reason)
 #> # A tibble: 3 × 5
-#>   zone_level level_status         pct_population methods          reason        
-#>   <chr>      <chr>                         <dbl> <chr>            <chr>         
+#>   zone_level level_status         pct_population methods          reason
+#>   <chr>      <chr>                         <dbl> <chr>            <chr>
 #> 1 elementary not_available                    NA district_outline Elementary: T…
 #> 2 middle     one_school_per_grade              1 district_outline Elementary: T…
 #> 3 high       one_school_per_grade              1 district_outline Elementary: T…
@@ -121,7 +121,7 @@ coverage |>
 [`gcd_locate()`](https://georgiacivicdata.org/r/reference/gcd_locate.md)
 takes points (`lat`, `lon`) or street addresses and returns the county,
 Census tract and block group, school district and zoned schools each
-falls in, one row per place. These are public landmarks:
+falls in, one row per place.
 
 ``` r
 
@@ -141,17 +141,17 @@ places |>
   select(id, geographic_type, geographic_id, geographic_name, grades)
 #> # A tibble: 28 × 5
 #>    id                    geographic_type   geographic_id geographic_name  grades
-#>    <chr>                 <chr>             <chr>         <chr>            <chr> 
-#>  1 Georgia State Capitol county            13121         Fulton           <NA>  
-#>  2 Georgia State Capitol tract             13121003500   Census Tract 35  <NA>  
-#>  3 Georgia State Capitol block_group       131210035001  Block Group 1, … <NA>  
-#>  4 Georgia State Capitol school_district   761           Atlanta Public … <NA>  
-#>  5 Georgia State Capitol elementary_school 761-0199      Centennial Acad… K-5   
-#>  6 Georgia State Capitol middle_school     761-0199      Centennial Acad… 6-8   
-#>  7 Georgia State Capitol high_school       761-4560      Midtown High Sc… 9-12  
-#>  8 Stone Mountain Park   county            13089         DeKalb           <NA>  
-#>  9 Stone Mountain Park   tract             13089021915   Census Tract 21… <NA>  
-#> 10 Stone Mountain Park   block_group       130890219153  Block Group 3, … <NA>  
+#>    <chr>                 <chr>             <chr>         <chr>            <chr>
+#>  1 Georgia State Capitol county            13121         Fulton           <NA>
+#>  2 Georgia State Capitol tract             13121003500   Census Tract 35  <NA>
+#>  3 Georgia State Capitol block_group       131210035001  Block Group 1, … <NA>
+#>  4 Georgia State Capitol school_district   761           Atlanta Public … <NA>
+#>  5 Georgia State Capitol elementary_school 761-0199      Centennial Acad… K-5
+#>  6 Georgia State Capitol middle_school     761-0199      Centennial Acad… 6-8
+#>  7 Georgia State Capitol high_school       761-4560      Midtown High Sc… 9-12
+#>  8 Stone Mountain Park   county            13089         DeKalb           <NA>
+#>  9 Stone Mountain Park   tract             13089021915   Census Tract 21… <NA>
+#> 10 Stone Mountain Park   block_group       130890219153  Block Group 3, … <NA>
 #> # ℹ 18 more rows
 ```
 
@@ -170,7 +170,7 @@ noted <- filter(places, !is.na(note))
 noted |> select(id, geographic_type, geographic_name)
 #> # A tibble: 1 × 3
 #>   id                        geographic_type   geographic_name
-#>   <chr>                     <chr>             <chr>          
+#>   <chr>                     <chr>             <chr>
 #> 1 Appling County Courthouse elementary_school <NA>
 writeLines(strwrap(noted$note, width = 76))
 #> No elementary school zone has been collected for this district yet.
@@ -195,13 +195,13 @@ capitol |>
   select(match_status, matched_address, geographic_type, geographic_name, grades)
 #> # A tibble: 7 × 5
 #>   match_status matched_address            geographic_type geographic_name grades
-#>   <chr>        <chr>                      <chr>           <chr>           <chr> 
-#> 1 match        206 WASHINGTON ST SW, ATL… county          Fulton          <NA>  
-#> 2 match        206 WASHINGTON ST SW, ATL… tract           Census Tract 35 <NA>  
-#> 3 match        206 WASHINGTON ST SW, ATL… block_group     Block Group 1,… <NA>  
-#> 4 match        206 WASHINGTON ST SW, ATL… school_district Atlanta Public… <NA>  
-#> 5 match        206 WASHINGTON ST SW, ATL… elementary_sch… Centennial Aca… K-5   
-#> 6 match        206 WASHINGTON ST SW, ATL… middle_school   Centennial Aca… 6-8   
+#>   <chr>        <chr>                      <chr>           <chr>           <chr>
+#> 1 match        206 WASHINGTON ST SW, ATL… county          Fulton          <NA>
+#> 2 match        206 WASHINGTON ST SW, ATL… tract           Census Tract 35 <NA>
+#> 3 match        206 WASHINGTON ST SW, ATL… block_group     Block Group 1,… <NA>
+#> 4 match        206 WASHINGTON ST SW, ATL… school_district Atlanta Public… <NA>
+#> 5 match        206 WASHINGTON ST SW, ATL… elementary_sch… Centennial Aca… K-5
+#> 6 match        206 WASHINGTON ST SW, ATL… middle_school   Centennial Aca… 6-8
 #> 7 match        206 WASHINGTON ST SW, ATL… high_school     Midtown High S… 9-12
 ```
 
@@ -230,10 +230,10 @@ split |>
   select(geographic_type, geographic_id, geographic_name, grades)
 #> # A tibble: 4 × 4
 #>   geographic_type   geographic_id geographic_name                      grades
-#>   <chr>             <chr>         <chr>                                <chr> 
-#> 1 elementary_school 773-0105      Oakhurst Elementary School           K-2   
-#> 2 elementary_school 773-0112      Fifth Avenue Upper Elementary School 3-5   
-#> 3 middle_school     773-1552      Beacon Hill Middle School            6-8   
+#>   <chr>             <chr>         <chr>                                <chr>
+#> 1 elementary_school 773-0105      Oakhurst Elementary School           K-2
+#> 2 elementary_school 773-0112      Fifth Avenue Upper Elementary School 3-5
+#> 3 middle_school     773-1552      Beacon Hill Middle School            6-8
 #> 4 high_school       773-3050      Decatur High School                  9-12
 ```
 
@@ -246,7 +246,7 @@ gcd_locate(lat = oakhurst$latitude, lon = oakhurst$longitude, grade = "4") |>
   select(geographic_type, geographic_name, grades)
 #> # A tibble: 1 × 3
 #>   geographic_type   geographic_name                      grades
-#>   <chr>             <chr>                                <chr> 
+#>   <chr>             <chr>                                <chr>
 #> 1 elementary_school Fifth Avenue Upper Elementary School 3-5
 ```
 

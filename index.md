@@ -1,36 +1,36 @@
 # georgiacivicdata
 
-georgiacivicdata brings Georgia’s public data into R. It is the R client
-for the API run by [Georgia Civic Data](https://georgiacivicdata.org).
+`georgiacivicdata` brings Georgia’s public data into R. It is the R
+client for the API run by [Georgia Civic
+Data](https://georgiacivicdata.org).
 
-Georgia Civic Data gathers, organizes, and standardizes Georgia’s public
-data, helping residents, parents, researchers, and professionals find
-answers in data that is already theirs. Georgia’s public data is spread
-across dozens of agency websites as PDFs, spreadsheets and CSV files,
-and each source names its columns, student groups and places in its own
-way. Georgia Civic Data does that cleanup once. It puts every dataset in
-the same shape, with the same codes for counties, school districts,
-schools and demographic groups, so datasets from different agencies can
-be compared and joined. The data covers education, Census, health and
-immigration, at levels from the whole state down to single schools and
-Census tracts. Each dataset comes with a data contract that documents
-its source, its columns and the limits of the data.
+[Georgia Civic Data](https://georgiacivicdata.org) gathers, organizes,
+and standardizes Georgia’s public data; helping residents, parents,
+researchers, and professionals find answers in data that is already
+theirs. We put every dataset in the same shape, with the same codes for
+counties, school districts, schools and demographic groups. Datasets
+from different agencies can be compared and joined due to the
+standardization.
 
-The cleaned data is free to use through four channels: a point-and-click
-chart builder, a chatbot that answers questions in English or Spanish, a
-public API, and a connector for AI assistants. Georgia Civic Data is
-independent and is not affiliated with the State of Georgia or any of
-its agencies.
+The data covers education, Census, health, and immigration. Geographic
+detail spans from the whole state down to single schools and Census
+tracts. Each dataset comes with a data contract that documents its
+source, its columns, and the limits of the data.
 
-This package works with the public API so you don’t have to. You find
-datasets, read their documentation, and get rows, all from R. Results
-come back as tibbles with the right column types: codes stay text so
-leading zeros survive, years are integers, and rates are proportions
-between 0 and 1. Every school, district and county code comes with its
-name, and you can filter by name instead of code. School attendance
-zones and district boundaries come back as ‘sf’ objects, ready to map,
-and you can look up the schools zoned for any Georgia address. There is
-no API key and nothing to configure.
+With `georgiacivicdata` you can:
+
+- Find Georgia datasets, read the documentation, and get rows, all from
+  18. 
+- Get tibbles with consistent column types: codes stay text so leading
+  zeros survive, years are integers, and rates are proportions between 0
+  and 1.
+- See every school, district, and county code with its name and filter
+  by name instead of code.
+- Get school attendance zones and district boundaries as ‘sf’ objects,
+  ready to map.
+- Look up the schools zoned for any Georgia address.
+
+There is no API key and nothing to configure.
 
 ## Installation
 
@@ -42,12 +42,23 @@ Install the development version from GitHub:
 pak::pak("shanejorr/georgia-data-rpackage")
 ```
 
-## Example: graduation rates in Fulton County
+## Example: Graduation rates in Fulton County
 
 This walkthrough answers one question from start to finish: how has the
 high school graduation rate in Fulton County Schools changed over time?
-It follows the usual workflow: find a dataset, learn what is in it,
-download the rows you need, and plot them.
+It follows the usual workflow:
+
+- Find a dataset:
+  [`gcd_search()`](https://georgiacivicdata.org/r/reference/gcd_search.md)
+  or
+  [`gcd_datasets()`](https://georgiacivicdata.org/r/reference/gcd_datasets.md).
+- Learn what is in it:
+  [`gcd_columns()`](https://georgiacivicdata.org/r/reference/gcd_columns.md)
+  and
+  [`gcd_describe()`](https://georgiacivicdata.org/r/reference/gcd_describe.md).
+- Download the data:
+  [`gcd_rows()`](https://georgiacivicdata.org/r/reference/gcd_rows.md).
+- Plot them: any R plotting tool, such as ‘ggplot2’.
 
 ### Step 1: find the right dataset
 
@@ -55,9 +66,9 @@ Every dataset has a short name, such as `graduation_rate_4_year_cohort`,
 and you need that name to get data. If you don’t know it,
 [`gcd_search()`](https://georgiacivicdata.org/r/reference/gcd_search.md)
 searches the catalog in plain words. It matches both keywords and
-meaning, so you don’t need the exact wording of a dataset’s title. Each
-result has the dataset’s `name`, its `title`, and the first and last
-years it covers.
+meaning so you don’t need the exact wording of a dataset’s title. Each
+result has the dataset’s `name`, `title`, and the first and last years
+it covers.
 
 ``` r
 
@@ -77,16 +88,16 @@ gcd_search("high school graduation", n = 5)[, c("name", "title", "year_min", "ye
 
 The four-year cohort graduation rate, `graduation_rate_4_year_cohort`,
 is the one we want: the share of students who graduate within four years
-of starting ninth grade. To browse instead of search,
+of starting ninth grade.
 [`gcd_datasets()`](https://georgiacivicdata.org/r/reference/gcd_datasets.md)
-lists the whole catalog, about 176 datasets.
+lists the whole catalog, allowing browsing instead of searching.
 
 ### Step 2: learn what is in it
 
-Before downloading anything, check what each row holds.
+Check what datasets hold before downloading them.
 [`gcd_columns()`](https://georgiacivicdata.org/r/reference/gcd_columns.md)
-lists a dataset’s columns with their type, their role (a year, a place,
-a demographic group, or a measured value), and their unit.
+lists a dataset’s columns with its type, role (a year, a place, a
+demographic group, or a measured value), and unit.
 
 ``` r
 
@@ -108,11 +119,11 @@ want is `graduation_rate`, a proportion on the 0-1 scale, so 0.9 means
 90%.
 
 [`gcd_describe()`](https://georgiacivicdata.org/r/reference/gcd_describe.md)
-prints the rest of the dataset’s documentation: its source, the years
-and detail levels it covers, and notes on how to use it. Those notes
-matter here. Georgia changed how it calculates the graduation rate in
-2011, so the rates before and after 2011 are not comparable. We will
-start the series in 2011.
+prints the rest of the dataset’s documentation, which includes its
+source, the years and detail levels it covers, and notes on how to use
+it. Those notes matter here. Georgia changed how it calculates the
+graduation rate in 2011, so the rates before and after 2011 are not
+comparable. We will start the series in 2011.
 
 ### Step 3: get the rows
 
@@ -135,14 +146,14 @@ grads <- gcd_rows(
   demographic = c("all", "black", "hispanic", "white"),
   year = 2011:2025
 )
-#> ℹ This result contains NULL metric cells, which mean the value was SUPPRESSED (small
-#>   counts), not zero — do not report or chart a NULL as 0 (see null_semantics and each
-#>   column's null_meaning).
-#> ℹ Demographic groups overlap across categories and may overlap within a category
-#>   (active_duty can be a subset of military_connected). Read the dataset's definitions and
-#>   non_additive declarations. Use the published `all` total when available, never add it
-#>   to its subgroups. Counts reconcile only for complete, disjoint groups; subgroup rates
-#>   generally do not add to the overall rate.
+#> ℹ This result contains NULL metric cells, which mean the value was SUPPRESSED (small counts),
+#>   not zero — do not report or chart a NULL as 0 (see null_semantics and each column's
+#>   null_meaning).
+#> ℹ Demographic groups overlap across categories and may overlap within a category (active_duty
+#>   can be a subset of military_connected). Read the dataset's definitions and non_additive
+#>   declarations. Use the published `all` total when available, never add it to its subgroups.
+#>   Counts reconcile only for complete, disjoint groups; subgroup rates generally do not add to
+#>   the overall rate.
 #> ℹ `district_census_id` is a 5-digit Census school-district code, NOT a county FIPS, and a
 #>   district is not 1:1 with a county — do not map these district rows as counties.
 grads
@@ -201,13 +212,23 @@ about 92% in 2025.](reference/figures/README-grad-plot-1.png)
 
 ## Lookup tables
 
-Shared lookup tables, called dimensions, hold the names and attributes
-of districts, schools, counties and demographic groups.
+Datasets hold codes and figures, with place names added. Everything else
+known about a place lives in shared lookup tables, called dimensions: a
+district’s type, a school’s level, grade span, locale (city, suburb,
+town or rural), charter status, address and coordinates, and a Census
+tract’s land area and population.
 [`gcd_dimension()`](https://georgiacivicdata.org/r/reference/gcd_dimension.md)
-returns one, with the same name filters as
+returns one as a tibble, with the same name filters as
 [`gcd_rows()`](https://georgiacivicdata.org/r/reference/gcd_rows.md).
-Here are the active high schools in Fulton County with their locale
-(city, suburb, town or rural):
+
+Lookup tables help you:
+
+- Browse what exists before you request data, such as every active high
+  school in a district.
+- Add attributes the datasets don’t carry, then filter or group by them.
+- Map schools with their coordinates.
+
+Here are the active high schools in Fulton County with their locale:
 
 ``` r
 
@@ -229,6 +250,30 @@ gcd_dimension("schools", district = "Fulton County", school_level = "high",
 #> 10 660           0386        Independence High School         city  
 #> # ℹ 12 more rows
 ```
+
+To compare graduation rates by locale, join the locale to school-level
+graduation rates. School codes repeat across districts, so join on
+`district_code` and `school_code` together.
+
+``` r
+
+schools <- gcd_dimension("schools", district = "Fulton County",
+                         columns = c("district_code", "school_code", "locale"))
+
+school_grads <- gcd_rows("graduation_rate_4_year_cohort",
+                         district = "Fulton County", detail = "schools",
+                         demographic = "all", year = 2025, quiet = TRUE)
+
+school_grads <- merge(school_grads, schools, by = c("district_code", "school_code"))
+aggregate(graduation_rate ~ locale, data = school_grads, FUN = median)
+#>   locale graduation_rate
+#> 1   city         0.95080
+#> 2  rural         0.94330
+#> 3 suburb         0.96585
+```
+
+Fulton County has only two rural high schools, so treat this as an
+illustration, not a finding.
 
 ## School zones and places
 
@@ -262,8 +307,8 @@ Data API.
 gcd_locate(address = "206 Washington St SW, Atlanta, GA 30334")[
   , c("geographic_type", "geographic_id", "geographic_name", "grades")
 ]
-#> ℹ A zone is the default assignment, not the only option: a Georgia student may attend
-#>   another public school by transfer, or a charter, magnet or other choice school. See
+#> ℹ A zone is the default assignment, not the only option: a Georgia student may attend another
+#>   public school by transfer, or a charter, magnet or other choice school. See
 #>   attendance_rules for the main ways.
 #> # A tibble: 7 × 4
 #>   geographic_type   geographic_id geographic_name                               grades
@@ -298,4 +343,4 @@ The package code is MIT-licensed.
 
 - Package website: <https://georgiacivicdata.org/r/>
 - Georgia Civic Data: <https://georgiacivicdata.org>
-- API documentation: <https://georgiacivicdata.org/docs>
+- API documentation: <https://georgiacivicdata.org/api>
