@@ -1,0 +1,7 @@
+.Rproj.user
+docs/
+.Rhistory
+.RData
+*.tar.gz
+georgiacivicdata.Rcheck/
+inst/doc
