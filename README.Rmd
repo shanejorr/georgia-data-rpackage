@@ -1,0 +1,135 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%",
+  dpi = 96
+)
+options(width = 90, pillar.width = 90)
+```
+
+# georgiacivicdata
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/shanejorr/georgia-data-rpackage/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/shanejorr/georgia-data-rpackage/actions/workflows/R-CMD-check.yaml)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
+
+georgiacivicdata is an R client for the [Georgia Civic Data](https://georgiacivicdata.org)
+API: cleaned public data about Georgia's schools and communities. It covers
+education (graduation, test scores, enrollment, attendance, school
+accountability), U.S. Census context, immigration and health, at state,
+county, school district, school and Census tract level.
+
+- **Tidy tibbles**, typed from each dataset's schema: codes keep their
+  leading zeros, years are integers, proportions stay on the 0-1 scale.
+- **Names beside codes**: every district, school, county and tract code
+  comes with its name, and you can filter by name (`district = "Fulton County"`).
+- **School attendance zones and district boundaries** as 'sf' objects.
+- **Locate points and addresses**: the county, tract, block group, school
+  district and zoned schools for any location in Georgia. Addresses are
+  geocoded on your computer with the U.S. Census geocoder and never reach
+  the Georgia Civic Data API.
+
+There is no API key and nothing to configure.
+
+## Installation
+
+Install the development version from GitHub:
+
+```r
+# install.packages("pak")
+pak::pak("shanejorr/georgia-data-rpackage")
+```
+
+## Find data
+
+```{r find}
+library(georgiacivicdata)
+
+gcd_search("high school graduation", n = 5)
+```
+
+`gcd_datasets()` lists the whole catalog, about 176 datasets.
+
+## Understand a dataset
+
+```{r describe}
+gcd_columns("graduation_rate_4_year_cohort")[, c("column", "type", "role", "unit")]
+```
+
+`gcd_describe()` prints everything else: source, years, detail levels,
+which columns need a single value, and the notes the data contract
+declares.
+
+## Get rows, by name or code
+
+```{r rows}
+grad <- gcd_rows(
+  "graduation_rate_4_year_cohort",
+  district = "Fulton County",
+  detail = "districts",
+  demographic = c("all", "black", "hispanic", "white"),
+  year = 2021:2025
+)
+grad
+```
+
+Every category the filters don't exclude comes back, totals (`all`)
+beside subgroups, so the API's advisories print as messages: never add a
+total to its subgroups, and a missing value (`NA`) usually means
+**suppressed**, not zero.
+
+## Lookup tables
+
+```{r lookup}
+gcd_dimension("schools", district = "Fulton County", school_level = "high",
+              active = TRUE,
+              columns = c("district_code", "school_code", "school_name", "locale"))
+```
+
+## School zones and places
+
+```{r zones, fig.width = 6, fig.height = 5, out.width = "70%", message = FALSE, fig.alt = "Map of the Atlanta Public Schools high school attendance zones."}
+library(ggplot2)
+
+zones <- gcd_school_zones(district = "Atlanta Public Schools", zone_level = "high")
+ggplot(zones) +
+  geom_sf(aes(fill = school_name), colour = "white", linewidth = 0.3) +
+  labs(title = "Atlanta Public Schools high school zones, 2026-27", fill = NULL) +
+  theme_void() +
+  theme(legend.text = element_text(size = 7))
+```
+
+```{r locate}
+# The Georgia State Capitol
+gcd_locate(address = "206 Washington St SW, Atlanta, GA 30334")[
+  , c("geographic_type", "geographic_id", "geographic_name", "grades")
+]
+```
+
+## Data license and citation
+
+The data is published under the [Creative Commons Attribution 4.0
+International license (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/):
+credit Georgia Civic Data and the original source. `gcd_citation()`
+writes the citation:
+
+```{r cite}
+gcd_citation(grad)
+```
+
+The package code is MIT-licensed.
+
+## Learn more
+
+- Package website: <https://georgiacivicdata.org/r/>
+- Georgia Civic Data: <https://georgiacivicdata.org>
+- API documentation: <https://georgiacivicdata.org/docs>

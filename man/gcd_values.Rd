@@ -36,7 +36,7 @@ default to counties). To combine levels, call once per level and bind
 the rows.}
 
 \item{district, school, county}{Places by name, such as
-\code{district = "Fulton County"}, \code{school = "Milton High School"},
+\code{district = "Fulton County"}, \code{school = "Roswell High School"},
 \code{county = c("Fulton", "DeKalb")}. Matched exactly against current and
 former names (ignoring case, accents and a trailing "County"); an
 unknown or ambiguous name is an error that lists suggestions or

@@ -1,0 +1,303 @@
+---
+title: "Analyzing Georgia data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Analyzing Georgia data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "analysis-",
+  fig.width = 7,
+  fig.height = 4.5,
+  dpi = 96,
+  out.width = "100%"
+)
+options(width = 80, pillar.width = 80)
+```
+
+<!-- This vignette is precomputed: edit analysis.Rmd.orig and run
+vignettes/precompile.R. It calls the live API, which CRAN builds can't. -->
+
+This article puts two datasets side by side: school district graduation
+rates from the state, and household income from the U.S. Census. It shows
+the steps any such analysis needs: pick the datasets, confirm they share a
+join key and years, pool rates from their counts, and respect breaks in a
+series.
+
+```{r setup, message = FALSE}
+library(georgiacivicdata)
+library(dplyr)
+library(ggplot2)
+```
+
+## Pick the datasets
+
+```{r search}
+gcd_search("high school graduation rate", n = 3) |> select(name, title, year_min, year_max)
+gcd_search("household income", level = "districts", n = 3) |> select(name, title, year_min, year_max)
+```
+
+`graduation_rate_4_year_cohort` is the four-year cohort graduation rate
+published by the Governor's Office of Education and Workforce Strategy;
+`median_household_income` is the American Community Survey (ACS) 5-year
+estimate. Before joining them, check that they share a detail level and a
+key, and which years they cover:
+
+```{r describe}
+grad_info <- gcd_describe("graduation_rate_4_year_cohort")
+income_info <- gcd_describe("median_household_income")
+
+intersect(grad_info$detail_levels, income_info$detail_levels)
+intersect(grad_info$grain, income_info$grain)
+range(grad_info$years)
+range(income_info$years)
+```
+
+Both publish district rows keyed by `district_code`. The ACS figures are
+5-year estimates named by their end year, so the 2024 vintage pools survey
+responses from 2020 to 2024. We match it with the graduating classes of
+2020 to 2024.
+
+The graduation schema also declares a series break, which matters for any
+trend:
+
+```{r breaks}
+grad_info$notes$series_breaks
+```
+
+## Pool graduation rates from their counts
+
+A district's rate over several years is the sum of its graduates over the
+sum of its cohorts, not the average of its yearly rates. `gcd_columns()`
+names the numerator and denominator:
+
+```{r components}
+gcd_columns("graduation_rate_4_year_cohort") |>
+  filter(!is.na(metric_component)) |>
+  select(column, metric_component)
+```
+
+```{r grad}
+grad <- gcd_rows(
+  "graduation_rate_4_year_cohort",
+  detail = "districts",
+  demographic = "all",
+  district_type = "standard",
+  year = 2020:2024,
+  quiet = TRUE
+)
+
+pooled <- grad |>
+  filter(!is.na(num_graduates), !is.na(num_cohort)) |>
+  group_by(district_code, district_name) |>
+  summarise(
+    years = n(),
+    graduates = sum(num_graduates),
+    cohort = sum(num_cohort),
+    .groups = "drop"
+  ) |>
+  mutate(graduation_rate = graduates / cohort)
+
+pooled
+```
+
+`district_type = "standard"` keeps the 180 city and county districts, the
+only ones the Census publishes estimates for (charter and state districts
+have no Census geography).
+
+Pooling and averaging give different answers whenever districts differ in
+size. Here is 2024 for every kind of district, set against the published
+state row:
+
+```{r pool-vs-mean}
+state_2024 <- gcd_rows("graduation_rate_4_year_cohort", detail = "states",
+                       demographic = "all", year = 2024, quiet = TRUE)
+districts_2024 <- gcd_rows("graduation_rate_4_year_cohort", detail = "districts",
+                           demographic = "all", year = 2024, quiet = TRUE) |>
+  filter(!is.na(num_graduates), !is.na(num_cohort))
+
+districts_2024 |>
+  summarise(
+    mean_of_district_rates = mean(graduation_rate),
+    pooled_from_counts = sum(num_graduates) / sum(num_cohort),
+    cohort_counted = sum(num_cohort)
+  ) |>
+  mutate(published_state_rate = state_2024$graduation_rate,
+         published_state_cohort = state_2024$num_cohort) |>
+  as.data.frame()
+
+districts_2024 |>
+  group_by(district_type) |>
+  summarise(districts = n(), cohort = sum(num_cohort),
+            graduation_rate = sum(num_graduates) / sum(num_cohort))
+```
+
+Pooled from counts, the districts come within about a point of the
+published state rate. The cohort counted here is about 2,000 students short
+of the state's, because some district rows have missing counts and drop out
+of the sums. The
+plain mean of district rates is further off, because it weighs a district
+of a few dozen students like one of thousands. The table by district type
+shows why the standard districts alone sit above the state rate: the state
+charter districts, with about 5,000 students in the cohort, graduate far
+fewer of them.
+
+## Join household income
+
+```{r income}
+income <- gcd_rows(
+  "median_household_income",
+  detail = "districts",
+  year = 2024,
+  race_iteration = "all",
+  quiet = TRUE
+) |>
+  select(district_code, median_household_income, median_household_income_moe)
+
+joined <- inner_join(pooled, income, by = "district_code")
+nrow(joined)
+```
+
+Medians can't be pooled or averaged across districts, so income stays one
+value per district. The ACS reports a 90% margin of error beside each
+estimate; for small districts it can be a sizable share of the estimate:
+
+```{r moe}
+joined |>
+  mutate(moe_share = median_household_income_moe / median_household_income) |>
+  summarise(median_moe_share = median(moe_share), max_moe_share = max(moe_share))
+```
+
+```{r scatter, fig.alt = "Scatter plot of district graduation rates against median household income.", fig.cap = "Each point is a standard school district, sized by its cohorts."}
+ggplot(joined, aes(median_household_income, graduation_rate)) +
+  geom_point(aes(size = cohort), alpha = 0.5, colour = "#b91c1c") +
+  geom_smooth(method = "loess", formula = y ~ x, se = FALSE, colour = "grey30") +
+  scale_x_log10(labels = scales::label_dollar(accuracy = 1)) +
+  scale_y_continuous(labels = scales::label_percent()) +
+  scale_size_area(max_size = 8, labels = scales::label_comma()) +
+  labs(
+    x = "Median household income, 2020-2024 (log scale)",
+    y = "Four-year graduation rate, classes of 2020-2024",
+    size = "Students in\ncohorts",
+    title = "Georgia school districts: graduation rate and household income"
+  ) +
+  theme_minimal()
+```
+
+```{r correlation}
+cor(joined$median_household_income, joined$graduation_rate, method = "spearman")
+```
+
+```{r by-third}
+joined |>
+  mutate(income_third = cut(
+    median_household_income,
+    quantile(median_household_income, c(0, 1 / 3, 2 / 3, 1)),
+    labels = c("Lowest third", "Middle third", "Highest third"),
+    include.lowest = TRUE
+  )) |>
+  group_by(income_third) |>
+  summarise(districts = n(),
+            lowest_rate = min(graduation_rate),
+            median_rate = median(graduation_rate),
+            highest_rate = max(graduation_rate))
+```
+
+The rank correlation is `r round(cor(joined$median_household_income, joined$graduation_rate, method = "spearman"), 2)`,
+a weak positive association: across districts, higher household incomes go
+with somewhat higher graduation rates, but the spread within each income
+group is far wider than the difference between groups.
+
+## A trend that respects the series
+
+To follow the pattern over time, group districts by their 2020-2024 income
+and pool each group's graduation rate by year. Two rules from the schema
+decide which years can be used:
+
+- the **series break** in 2011: earlier years use a different method, so
+  the trend can't run across it;
+- the limitations note that `num_cohort` is **missing in every row from 2012
+  to 2016**, so those years can't be pooled from counts.
+
+```{r trend-data}
+first_year <- max(grad_info$notes$series_breaks$year)
+
+grad_years <- gcd_rows(
+  "graduation_rate_4_year_cohort",
+  detail = "districts",
+  demographic = "all",
+  district_type = "standard",
+  year = first_year:max(grad_info$years),
+  quiet = TRUE
+)
+
+groups <- joined |>
+  mutate(income_group = cut(
+    median_household_income,
+    quantile(median_household_income, c(0, 1 / 3, 2 / 3, 1)),
+    labels = c("Lowest third", "Middle third", "Highest third"),
+    include.lowest = TRUE
+  )) |>
+  select(district_code, income_group)
+
+trend <- grad_years |>
+  inner_join(groups, by = "district_code") |>
+  filter(!is.na(num_graduates), !is.na(num_cohort)) |>
+  group_by(year, income_group) |>
+  summarise(graduation_rate = sum(num_graduates) / sum(num_cohort),
+            districts = n(), .groups = "drop")
+
+trend |> count(year, name = "groups")
+```
+
+```{r trend, fig.alt = "Line chart of pooled graduation rates by district income group, by year.", fig.cap = "Graduation rates pooled from counts, by district income group."}
+# no line across 2012-2016, the years with nothing to pool
+ggplot(trend, aes(year, graduation_rate, colour = income_group)) +
+  geom_line(data = filter(trend, year >= 2017), linewidth = 0.8) +
+  geom_point(size = 1.5) +
+  scale_y_continuous(labels = scales::label_percent()) +
+  scale_colour_manual(values = c("#fca5a5", "#ef4444", "#7f1d1d")) +
+  labs(
+    x = NULL, y = "Pooled four-year graduation rate",
+    colour = "Districts by 2020-2024\nmedian household income",
+    title = "Graduation rates by district income group",
+    caption = "Classes of 2011 and 2017 on: earlier years use another method,\nand 2012-2016 publish no cohort counts to pool."
+  ) +
+  theme_minimal()
+```
+
+```{r trend-table}
+trend |>
+  select(year, income_group, graduation_rate) |>
+  tidyr::pivot_wider(names_from = income_group, values_from = graduation_rate)
+```
+
+All three groups rose by more than 20 points between the classes of 2011
+and 2025. In 2011 the highest-income third led the other two; by the
+classes of 2021 to 2025 the three groups sit within a few points of each
+other, and the lowest-income third is at or near the top. These pooled
+rates weigh districts by their cohorts: five large metro Atlanta districts
+(Gwinnett, Cobb, Fulton, DeKalb and Forsyth) hold almost half of the
+highest-income group's students, while the correlation above counts every
+district once. The two views answer different questions.
+
+## What these figures can't tell
+
+- **Association, not causation.** Income is one of many ways districts
+  differ; nothing here says income raises graduation rates.
+- **Districts are not families.** Median household income describes every
+  household in a district, most without school-age children, and says
+  nothing about the students within it.
+- **Income groups are fixed at 2020-2024.** Districts may have sat in a
+  different group in 2011, and ACS dollars are in each vintage's own
+  prices.
+- **Estimates carry error.** Each ACS median has a margin of error, larger
+  in small districts; a district near a group boundary could sit in either.
+- **Cohort rates count on-time graduates** of each district's adjusted
+  cohort; they don't follow students who transfer to charter, private or
+  out-of-state schools.

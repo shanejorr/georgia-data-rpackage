@@ -1,0 +1,184 @@
+---
+title: "School zones and places"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{School zones and places}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "school-zones-",
+  fig.width = 7,
+  fig.height = 5,
+  dpi = 96,
+  out.width = "100%"
+)
+options(width = 80, pillar.width = 80)
+```
+
+<!-- This vignette is precomputed: edit school-zones.Rmd.orig and run
+vignettes/precompile.R. It calls the live API, which CRAN builds can't. -->
+
+Georgia Civic Data publishes school attendance zones: the areas that assign
+a home to its zoned elementary, middle and high school. This article maps
+one district's zones, checks which schools have no zone and how precise the
+zones are, and finds the places a location falls in.
+
+```{r setup, message = FALSE}
+library(georgiacivicdata)
+library(dplyr)
+library(ggplot2)
+```
+
+The geometry functions return 'sf' objects, so install 'sf' to map them.
+Every one also takes `geometry = FALSE` for a plain tibble.
+
+## Map one district's zones
+
+```{r zones}
+zones <- gcd_school_zones(district = "Atlanta Public Schools")
+zones |>
+  sf::st_drop_geometry() |>
+  count(zone_level, method, accuracy_class)
+```
+
+```{r map, fig.height = 3.4, fig.alt = "Map of Atlanta Public Schools elementary, middle and high school attendance zones.", fig.cap = "Atlanta Public Schools zones by level; each colour is a school."}
+ggplot(zones) +
+  geom_sf(aes(fill = school_name), colour = "white", linewidth = 0.2,
+          show.legend = FALSE) +
+  facet_wrap(~ factor(zone_level, levels = c("elementary", "middle", "high"))) +
+  labs(title = "Atlanta Public Schools attendance zones, 2026-27") +
+  theme_void()
+```
+
+The default `resolution = "display"` returns simplified polygons for maps.
+`resolution = "full"` returns the source polygons, which are much larger;
+filter to a district before asking for them.
+
+## Schools without a zone
+
+Charter, magnet, alternative and virtual schools have no attendance zone.
+`gcd_school_zone_status()` says which schools have one and why the others
+don't:
+
+```{r status}
+status <- gcd_school_zone_status(district = "Atlanta Public Schools")
+count(status, zone_status, no_zone_category)
+attr(status, "note")
+```
+
+## How precise are the zones?
+
+Zones come from very different sources. Some are the district's official GIS
+layers; others are digitized from PDF maps, rebuilt from street lists, or
+are the whole district outline (in districts with one school per grade).
+Every zone says how it was built (`method`) and how exact it is
+(`accuracy_class`); treat them accordingly.
+
+```{r precision}
+coverage <- gcd_school_zone_coverage()
+coverage |>
+  count(zone_level, level_status) |>
+  tidyr::pivot_wider(names_from = zone_level, values_from = n)
+```
+
+`gcd_school_zone_coverage()` gives one row per district and level, with the
+share of the district's land and 2020 population its zones cover, and the
+reason for anything short of complete:
+
+```{r coverage}
+coverage |>
+  filter(district_name == "Appling County") |>
+  select(zone_level, level_status, pct_population, methods, reason)
+```
+
+## Locate a place
+
+`gcd_locate()` takes points (`lat`, `lon`) or street addresses and returns
+the county, Census tract and block group, school district and zoned schools
+each falls in, one row per place. These are public landmarks:
+
+```{r locate-points}
+landmarks <- tibble::tribble(
+  ~landmark,                      ~lat,     ~lon,
+  "Georgia State Capitol",        33.7490,  -84.3880,
+  "Stone Mountain Park",          33.8053,  -84.1455,
+  "Okefenokee Swamp Park",        31.0558,  -82.2701,
+  "Appling County Courthouse",    31.7782,  -82.3482
+)
+places <- gcd_locate(lat = landmarks$lat, lon = landmarks$lon,
+                     id = landmarks$landmark)
+places |>
+  select(id, geographic_type, geographic_id, geographic_name, grades)
+```
+
+The output is long: filter it to the rows you need, such as
+`filter(places, geographic_type == "high_school")`. A school's
+`geographic_id` is its `"DISTRICT-SCHOOL"` code, the form `gcd_rows()` takes
+as `school_id`.
+
+The `note` column explains any row that is missing or needs care, such as a
+level with no zone collected yet:
+
+```{r notes}
+noted <- filter(places, !is.na(note))
+noted |> select(id, geographic_type, geographic_name)
+writeLines(strwrap(noted$note, width = 76))
+```
+
+### Addresses
+
+Addresses are geocoded on your computer with the U.S. Census batch
+geocoder; only the resulting coordinates are sent to Georgia Civic Data.
+Give one-line addresses or a data frame with `street`, `city`, `state` and
+`zip`:
+
+```{r address}
+capitol <- gcd_locate(address = "206 Washington St SW, Atlanta, GA 30334")
+capitol |>
+  select(match_status, matched_address, geographic_type, geographic_name, grades)
+```
+
+### Split grade runs
+
+Some homes are zoned to one elementary school for the early grades and
+another for the later ones. Then a level has more than one school row, and
+`grades` tells them apart. Oakhurst Elementary in the City Schools of
+Decatur teaches kindergarten to grade 2; locating the school itself shows
+both of its neighborhood's elementary zones:
+
+```{r split}
+oakhurst <- gcd_dimension("schools", district_code = "773", q = "Oakhurst",
+                          active = TRUE,
+                          columns = c("school_name", "latitude", "longitude"))
+oakhurst
+
+split <- gcd_locate(lat = oakhurst$latitude, lon = oakhurst$longitude)
+split |>
+  filter(endsWith(geographic_type, "_school")) |>
+  select(geographic_type, geographic_id, geographic_name, grades)
+```
+
+`grade` keeps only the school for one grade:
+
+```{r grade}
+gcd_locate(lat = oakhurst$latitude, lon = oakhurst$longitude, grade = "4") |>
+  filter(endsWith(geographic_type, "_school")) |>
+  select(geographic_type, geographic_name, grades)
+```
+
+### The default assignment
+
+A zone is the default assignment, not the only option:
+
+```{r assignment}
+attr(capitol, "assignment_note")
+```
+
+Students can attend another public school by transfer, or a charter, magnet
+or other choice school, and these zones are not an official enrollment
+determination: confirm an assignment with the school district.

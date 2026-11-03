@@ -39,7 +39,7 @@ default to counties). To combine levels, call once per level and bind
 the rows.}
 
 \item{district, school, county}{Places by name, such as
-\code{district = "Fulton County"}, \code{school = "Milton High School"},
+\code{district = "Fulton County"}, \code{school = "Roswell High School"},
 \code{county = c("Fulton", "DeKalb")}. Matched exactly against current and
 former names (ignoring case, accents and a trailing "County"); an
 unknown or ambiguous name is an error that lists suggestions or
@@ -188,7 +188,7 @@ grad <- gcd_rows(
 
 # One school, by name within its district
 gcd_rows("graduation_rate_4_year_cohort",
-         district = "Fulton County", school = "Milton High School",
+         district = "Fulton County", school = "Roswell High School",
          demographic = "all")
 
 # Statewide schools, one subject, codes only

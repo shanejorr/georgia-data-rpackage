@@ -4,3 +4,9 @@
 ^notes$
 ^CLAUDE\.md$
 ^AGENTS\.md$
+^README\.Rmd$
+vignettes/*.Rmd.orig
+vignettes/precompile.R
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
