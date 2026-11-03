@@ -88,27 +88,32 @@
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"shanejorr/georgia-data-rpackage"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="find-data">Find data<a class="anchor" aria-label="anchor" href="#find-data"></a>
+<h2 id="example-graduation-rates-in-fulton-county">Example: graduation rates in Fulton County<a class="anchor" aria-label="anchor" href="#example-graduation-rates-in-fulton-county"></a>
 </h2>
+<p>This walkthrough answers one question from start to finish: how has the high school graduation rate in Fulton County Schools changed over time? It follows the usual workflow: find a dataset, learn what is in it, download the rows you need, and plot them.</p>
+<div class="section level3">
+<h3 id="step-1-find-the-right-dataset">Step 1: find the right dataset<a class="anchor" aria-label="anchor" href="#step-1-find-the-right-dataset"></a>
+</h3>
+<p>Every dataset has a short name, such as <code>graduation_rate_4_year_cohort</code>, and you need that name to get data. If you don’t know it, <code><a href="reference/gcd_search.html">gcd_search()</a></code> searches the catalog in plain words. It matches both keywords and meaning, so you don’t need the exact wording of a dataset’s title. Each result has the dataset’s <code>name</code>, its <code>title</code>, and the first and last years it covers.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://georgiacivicdata.org/r/">georgiacivicdata</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="reference/gcd_search.html">gcd_search</a></span><span class="op">(</span><span class="st">"high school graduation"</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/gcd_search.html">gcd_search</a></span><span class="op">(</span><span class="st">"high school graduation"</span>, n <span class="op">=</span> <span class="fl">5</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"name"</span>, <span class="st">"title"</span>, <span class="st">"year_min"</span>, <span class="st">"year_max"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; ℹ Lookup tables that match: "schools" and "districts". See `gcd_dimension()`.</span></span>
-<span><span class="co">#&gt; # A tibble: 5 × 11</span></span>
-<span><span class="co">#&gt;    rank name     title summary main_topic detail_levels year_min year_max score matched_on</span></span>
-<span><span class="co">#&gt;   &lt;int&gt; &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;      &lt;list&gt;           &lt;int&gt;    &lt;int&gt; &lt;dbl&gt; &lt;list&gt;    </span></span>
-<span><span class="co">#&gt; 1     1 ccrpi_g… High… Georgi… education  &lt;chr [3]&gt;         2012     2025 0.364 &lt;chr [7]&gt; </span></span>
-<span><span class="co">#&gt; 2     2 graduat… Four… Share … education  &lt;chr [3]&gt;         2004     2025 0.314 &lt;chr [7]&gt; </span></span>
-<span><span class="co">#&gt; 3     3 high_sc… High… Counts… education  &lt;chr [3]&gt;         2011     2025 0.321 &lt;chr [8]&gt; </span></span>
-<span><span class="co">#&gt; 4     4 postsec… Post… How ma… education  &lt;chr [3]&gt;         2010     2023 0.244 &lt;chr [5]&gt; </span></span>
-<span><span class="co">#&gt; 5     5 postsec… Post… How ma… education  &lt;chr [3]&gt;         2008     2021 0.259 &lt;chr [4]&gt; </span></span>
-<span><span class="co">#&gt; # ℹ 1 more variable: matched_columns &lt;list&gt;</span></span></code></pre></div>
-<p><code><a href="reference/gcd_datasets.html">gcd_datasets()</a></code> lists the whole catalog, about 176 datasets.</p>
+<span><span class="co">#&gt; # A tibble: 5 × 4</span></span>
+<span><span class="co">#&gt;   name                          title                                    year_min year_max</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;                         &lt;chr&gt;                                       &lt;int&gt;    &lt;int&gt;</span></span>
+<span><span class="co">#&gt; 1 ccrpi_graduation_rate         High School Graduation Rates                 2012     2025</span></span>
+<span><span class="co">#&gt; 2 graduation_rate_4_year_cohort Four-Year Cohort Graduation Rate             2004     2025</span></span>
+<span><span class="co">#&gt; 3 high_school_completers        High School Completers                       2011     2025</span></span>
+<span><span class="co">#&gt; 4 postsecondary_c11             Postsecondary Enrollment of HS Graduate…     2010     2023</span></span>
+<span><span class="co">#&gt; 5 postsecondary_c12             Postsecondary Outcomes of HS Graduates …     2008     2021</span></span></code></pre></div>
+<p>The four-year cohort graduation rate, <code>graduation_rate_4_year_cohort</code>, is the one we want: the share of students who graduate within four years of starting ninth grade. To browse instead of search, <code><a href="reference/gcd_datasets.html">gcd_datasets()</a></code> lists the whole catalog, about 176 datasets.</p>
 </div>
-<div class="section level2">
-<h2 id="understand-a-dataset">Understand a dataset<a class="anchor" aria-label="anchor" href="#understand-a-dataset"></a>
-</h2>
+<div class="section level3">
+<h3 id="step-2-learn-what-is-in-it">Step 2: learn what is in it<a class="anchor" aria-label="anchor" href="#step-2-learn-what-is-in-it"></a>
+</h3>
+<p>Before downloading anything, check what each row holds. <code><a href="reference/gcd_columns.html">gcd_columns()</a></code> lists a dataset’s columns with their type, their role (a year, a place, a demographic group, or a measured value), and their unit.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/gcd_columns.html">gcd_columns</a></span><span class="op">(</span><span class="st">"graduation_rate_4_year_cohort"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"column"</span>, <span class="st">"type"</span>, <span class="st">"role"</span>, <span class="st">"unit"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; # A tibble: 7 × 4</span></span>
@@ -121,19 +126,34 @@
 <span><span class="co">#&gt; 5 num_graduates   integer metric         count     </span></span>
 <span><span class="co">#&gt; 6 num_cohort      integer metric         count     </span></span>
 <span><span class="co">#&gt; 7 graduation_rate number  metric         proportion</span></span></code></pre></div>
-<p><code><a href="reference/gcd_describe.html">gcd_describe()</a></code> prints everything else: source, years, detail levels, which columns need a single value, and the notes the data contract declares.</p>
+<p>Each row is one year, one place and one demographic group. The value we want is <code>graduation_rate</code>, a proportion on the 0-1 scale, so 0.9 means 90%.</p>
+<p><code><a href="reference/gcd_describe.html">gcd_describe()</a></code> prints the rest of the dataset’s documentation: its source, the years and detail levels it covers, and notes on how to use it. Those notes matter here. Georgia changed how it calculates the graduation rate in 2011, so the rates before and after 2011 are not comparable. We will start the series in 2011.</p>
 </div>
-<div class="section level2">
-<h2 id="get-rows-by-name-or-code">Get rows, by name or code<a class="anchor" aria-label="anchor" href="#get-rows-by-name-or-code"></a>
-</h2>
+<div class="section level3">
+<h3 id="step-3-get-the-rows">Step 3: get the rows<a class="anchor" aria-label="anchor" href="#step-3-get-the-rows"></a>
+</h3>
+<p><code><a href="reference/gcd_rows.html">gcd_rows()</a></code> downloads a dataset’s rows as a tibble. Filters narrow the request:</p>
+<ul>
+<li>
+<code>district</code> takes a district’s name and turns it into the district code for you (<code>district_code</code> takes the code directly).</li>
+<li>
+<code>detail = "districts"</code> asks for district-wide figures rather than one row per school.</li>
+<li>
+<code>demographic</code> picks the student groups; <code>"all"</code> is every student.</li>
+<li>
+<code>year</code> picks the years.</li>
+</ul>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">grad</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gcd_rows.html">gcd_rows</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">grads</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gcd_rows.html">gcd_rows</a></span><span class="op">(</span></span>
 <span>  <span class="st">"graduation_rate_4_year_cohort"</span>,</span>
 <span>  district <span class="op">=</span> <span class="st">"Fulton County"</span>,</span>
 <span>  detail <span class="op">=</span> <span class="st">"districts"</span>,</span>
 <span>  demographic <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"all"</span>, <span class="st">"black"</span>, <span class="st">"hispanic"</span>, <span class="st">"white"</span><span class="op">)</span>,</span>
-<span>  year <span class="op">=</span> <span class="fl">2021</span><span class="op">:</span><span class="fl">2025</span></span>
+<span>  year <span class="op">=</span> <span class="fl">2011</span><span class="op">:</span><span class="fl">2025</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; ℹ This result contains NULL metric cells, which mean the value was SUPPRESSED (small</span></span>
+<span><span class="co">#&gt;   counts), not zero — do not report or chart a NULL as 0 (see null_semantics and each</span></span>
+<span><span class="co">#&gt;   column's null_meaning).</span></span>
 <span><span class="co">#&gt; ℹ Demographic groups overlap across categories and may overlap within a category</span></span>
 <span><span class="co">#&gt;   (active_duty can be a subset of military_connected). Read the dataset's definitions and</span></span>
 <span><span class="co">#&gt;   non_additive declarations. Use the published `all` total when available, never add it</span></span>
@@ -141,38 +161,52 @@
 <span><span class="co">#&gt;   generally do not add to the overall rate.</span></span>
 <span><span class="co">#&gt; ℹ `district_census_id` is a 5-digit Census school-district code, NOT a county FIPS, and a</span></span>
 <span><span class="co">#&gt;   district is not 1:1 with a county — do not map these district rows as counties.</span></span>
-<span><span class="va">grad</span></span>
-<span><span class="co">#&gt; # A tibble: 20 × 11</span></span>
+<span><span class="va">grads</span></span>
+<span><span class="co">#&gt; # A tibble: 60 × 11</span></span>
 <span><span class="co">#&gt;     year district_code district_name district_census_id district_type demographic</span></span>
 <span><span class="co">#&gt;    &lt;int&gt; &lt;chr&gt;         &lt;chr&gt;         &lt;chr&gt;              &lt;chr&gt;         &lt;chr&gt;      </span></span>
-<span><span class="co">#&gt;  1  2021 660           Fulton County 02280              standard      all        </span></span>
-<span><span class="co">#&gt;  2  2021 660           Fulton County 02280              standard      black      </span></span>
-<span><span class="co">#&gt;  3  2021 660           Fulton County 02280              standard      hispanic   </span></span>
-<span><span class="co">#&gt;  4  2021 660           Fulton County 02280              standard      white      </span></span>
-<span><span class="co">#&gt;  5  2022 660           Fulton County 02280              standard      all        </span></span>
-<span><span class="co">#&gt;  6  2022 660           Fulton County 02280              standard      black      </span></span>
-<span><span class="co">#&gt;  7  2022 660           Fulton County 02280              standard      hispanic   </span></span>
-<span><span class="co">#&gt;  8  2022 660           Fulton County 02280              standard      white      </span></span>
-<span><span class="co">#&gt;  9  2023 660           Fulton County 02280              standard      all        </span></span>
-<span><span class="co">#&gt; 10  2023 660           Fulton County 02280              standard      black      </span></span>
-<span><span class="co">#&gt; 11  2023 660           Fulton County 02280              standard      hispanic   </span></span>
-<span><span class="co">#&gt; 12  2023 660           Fulton County 02280              standard      white      </span></span>
-<span><span class="co">#&gt; 13  2024 660           Fulton County 02280              standard      all        </span></span>
-<span><span class="co">#&gt; 14  2024 660           Fulton County 02280              standard      black      </span></span>
-<span><span class="co">#&gt; 15  2024 660           Fulton County 02280              standard      hispanic   </span></span>
-<span><span class="co">#&gt; 16  2024 660           Fulton County 02280              standard      white      </span></span>
-<span><span class="co">#&gt; 17  2025 660           Fulton County 02280              standard      all        </span></span>
-<span><span class="co">#&gt; 18  2025 660           Fulton County 02280              standard      black      </span></span>
-<span><span class="co">#&gt; 19  2025 660           Fulton County 02280              standard      hispanic   </span></span>
-<span><span class="co">#&gt; 20  2025 660           Fulton County 02280              standard      white      </span></span>
+<span><span class="co">#&gt;  1  2011 660           Fulton County 02280              standard      all        </span></span>
+<span><span class="co">#&gt;  2  2011 660           Fulton County 02280              standard      black      </span></span>
+<span><span class="co">#&gt;  3  2011 660           Fulton County 02280              standard      hispanic   </span></span>
+<span><span class="co">#&gt;  4  2011 660           Fulton County 02280              standard      white      </span></span>
+<span><span class="co">#&gt;  5  2012 660           Fulton County 02280              standard      all        </span></span>
+<span><span class="co">#&gt;  6  2012 660           Fulton County 02280              standard      black      </span></span>
+<span><span class="co">#&gt;  7  2012 660           Fulton County 02280              standard      hispanic   </span></span>
+<span><span class="co">#&gt;  8  2012 660           Fulton County 02280              standard      white      </span></span>
+<span><span class="co">#&gt;  9  2013 660           Fulton County 02280              standard      all        </span></span>
+<span><span class="co">#&gt; 10  2013 660           Fulton County 02280              standard      black      </span></span>
+<span><span class="co">#&gt; # ℹ 50 more rows</span></span>
 <span><span class="co">#&gt; # ℹ 5 more variables: demographic_label &lt;chr&gt;, demographic_category &lt;chr&gt;,</span></span>
 <span><span class="co">#&gt; #   num_graduates &lt;int&gt;, num_cohort &lt;int&gt;, graduation_rate &lt;dbl&gt;</span></span></code></pre></div>
-<p>Every category the filters don’t exclude comes back, totals (<code>all</code>) beside subgroups, so the API’s advisories print as messages: never add a total to its subgroups, and a missing value (<code>NA</code>) usually means <strong>suppressed</strong>, not zero.</p>
+<p>Each place comes back with both its code and its name, and each demographic code with a readable label. The API also prints advisories as messages. Here they warn that the <code>all</code> total sits beside the subgroups, so never add a total to its subgroups. A missing value (<code>NA</code>) usually means the figure was <strong>suppressed</strong> to protect small groups, not that it is zero.</p>
+</div>
+<div class="section level3">
+<h3 id="step-4-plot-the-overall-rate">Step 4: plot the overall rate<a class="anchor" aria-label="anchor" href="#step-4-plot-the-overall-rate"></a>
+</h3>
+<p>The tibble works with any R tool. To plot the overall rate over time, keep the rows where <code>demographic</code> is <code>"all"</code> and draw a line with ‘ggplot2’.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">grads_all</span> <span class="op">&lt;-</span> <span class="va">grads</span><span class="op">[</span><span class="va">grads</span><span class="op">$</span><span class="va">demographic</span> <span class="op">==</span> <span class="st">"all"</span>, <span class="op">]</span></span>
+<span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">grads_all</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">year</span>, y <span class="op">=</span> <span class="va">graduation_rate</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>colour <span class="op">=</span> <span class="st">"#1f5f8b"</span>, linewidth <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>colour <span class="op">=</span> <span class="st">"#1f5f8b"</span>, size <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_continuous</a></span><span class="op">(</span>labels <span class="op">=</span> <span class="fu">scales</span><span class="fu">::</span><span class="fu"><a href="https://scales.r-lib.org/reference/label_percent.html" class="external-link">label_percent</a></span><span class="op">(</span><span class="op">)</span>, limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.6</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    title <span class="op">=</span> <span class="st">"Fulton County Schools four-year graduation rate, all students"</span>,</span>
+<span>    x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="st">"Graduation rate"</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Source: Georgia Civic Data (GOEWS)"</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-grad-plot-1.png" alt="Line chart of the Fulton County Schools four-year graduation rate for all students, 2011 to 2025. The rate rises from about 70% in 2011 to about 92% in 2025." width="100%"></p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="lookup-tables">Lookup tables<a class="anchor" aria-label="anchor" href="#lookup-tables"></a>
 </h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<p>Shared lookup tables, called dimensions, hold the names and attributes of districts, schools, counties and demographic groups. <code><a href="reference/gcd_dimension.html">gcd_dimension()</a></code> returns one, with the same name filters as <code><a href="reference/gcd_rows.html">gcd_rows()</a></code>. Here are the active high schools in Fulton County with their locale (city, suburb, town or rural):</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/gcd_dimension.html">gcd_dimension</a></span><span class="op">(</span><span class="st">"schools"</span>, district <span class="op">=</span> <span class="st">"Fulton County"</span>, school_level <span class="op">=</span> <span class="st">"high"</span>,</span>
 <span>              active <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>              columns <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"district_code"</span>, <span class="st">"school_code"</span>, <span class="st">"school_name"</span>, <span class="st">"locale"</span><span class="op">)</span><span class="op">)</span></span>
@@ -194,17 +228,17 @@
 <div class="section level2">
 <h2 id="school-zones-and-places">School zones and places<a class="anchor" aria-label="anchor" href="#school-zones-and-places"></a>
 </h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">zones</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gcd_school_zones.html">gcd_school_zones</a></span><span class="op">(</span>district <span class="op">=</span> <span class="st">"Atlanta Public Schools"</span>, zone_level <span class="op">=</span> <span class="st">"high"</span><span class="op">)</span></span>
+<p><code><a href="reference/gcd_school_zones.html">gcd_school_zones()</a></code> returns school attendance zones as an ‘sf’ object, ready to map. This map shows the high school zones in Atlanta Public Schools:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">zones</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/gcd_school_zones.html">gcd_school_zones</a></span><span class="op">(</span>district <span class="op">=</span> <span class="st">"Atlanta Public Schools"</span>, zone_level <span class="op">=</span> <span class="st">"high"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">zones</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">school_name</span><span class="op">)</span>, colour <span class="op">=</span> <span class="st">"white"</span>, linewidth <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Atlanta Public Schools high school zones, 2026-27"</span>, fill <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_void</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>legend.text <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">7</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-zones-1.png" alt="Map of the Atlanta Public Schools high school attendance zones." width="70%"></p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<p><code><a href="reference/gcd_locate.html">gcd_locate()</a></code> goes the other way: give it an address or a point, and it returns the places that contain it, including the county, Census tract, school district and zoned schools. Addresses are geocoded on your computer with the U.S. Census geocoder, so only the point reaches the Georgia Civic Data API.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The Georgia State Capitol</span></span>
 <span><span class="fu"><a href="reference/gcd_locate.html">gcd_locate</a></span><span class="op">(</span>address <span class="op">=</span> <span class="st">"206 Washington St SW, Atlanta, GA 30334"</span><span class="op">)</span><span class="op">[</span></span>
 <span>  , <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"geographic_type"</span>, <span class="st">"geographic_id"</span>, <span class="st">"geographic_name"</span>, <span class="st">"grades"</span><span class="op">)</span></span>
@@ -226,9 +260,9 @@
 <div class="section level2">
 <h2 id="data-license-and-citation">Data license and citation<a class="anchor" aria-label="anchor" href="#data-license-and-citation"></a>
 </h2>
-<p>The data is published under the <a href="https://creativecommons.org/licenses/by/4.0/" class="external-link">Creative Commons Attribution 4.0 International license (CC BY 4.0)</a>: credit Georgia Civic Data and the original source. <code><a href="reference/gcd_citation.html">gcd_citation()</a></code> writes the citation:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/gcd_citation.html">gcd_citation</a></span><span class="op">(</span><span class="va">grad</span><span class="op">)</span></span>
+<p>The data is published under the <a href="https://creativecommons.org/licenses/by/4.0/" class="external-link">Creative Commons Attribution 4.0 International license (CC BY 4.0)</a>: credit Georgia Civic Data and the original source. <code><a href="reference/gcd_citation.html">gcd_citation()</a></code> writes the citation for any result:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/gcd_citation.html">gcd_citation</a></span><span class="op">(</span><span class="va">grads</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Four-Year Cohort Graduation Rate. Georgia Civic Data (georgiacivicdata.org), CC BY 4.0. https://georgiacivicdata.org/api/v1/datasets/graduation_rate_4_year_cohort. Original source: Governor's Office of Education and Workforce Strategy (GOEWS, formerly GOSA)."</span></span></code></pre></div>
 <p>The package code is MIT-licensed.</p>
 </div>
