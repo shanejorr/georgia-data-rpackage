@@ -106,7 +106,7 @@ test_that("gcd_contract() returns the contract or writes its YAML", {
   skip_if_no_mocks()
   local_gcd_state()
   path <- withr::local_tempfile(fileext = ".yaml")
-  httptest2::with_mock_dir("m/con", {
+  httptest2::with_mock_dir("m/ctr", {
     contract <- gcd_contract("graduation_rate_4_year_cohort")
     expect_invisible(out <- gcd_contract("graduation_rate_4_year_cohort", file = path))
   })
