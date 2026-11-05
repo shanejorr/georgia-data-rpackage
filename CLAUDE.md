@@ -15,6 +15,21 @@ lookups.
   the code under `~/projects/georgia-data/src/api/`, for exact response
   shapes. **That repo is a separate project: never edit anything in
   `~/projects/georgia-data` or any service it runs.**
+- The Python package in `~/projects/georgia-data-pypackage` (also
+  `georgiacivicdata`, pandas or Polars data frames) mirrors this one: the
+  same exported functions without the `gcd_` prefix (`gcd.rows()` for
+  `gcd_rows()`), the same arguments and the same output columns.
+  `notes/function-design.md` here is the design for both.
+- **Keep the two packages in parity, in both directions.** When this
+  package changes or adds functionality (a new function, argument, column
+  or behavior), the Python package must get the same change, and when the
+  Python package changes or adds functionality, this package must follow.
+  The only exceptions are the deliberate ones recorded in the Python
+  package's `CLAUDE.md` ("Python and R differ"). The Python package is
+  never edited from here: end any change here that it lacks by telling
+  Shane exactly what the Python package needs, and before working on a
+  feature, check the Python package for changes this package has not
+  caught up with yet.
 - The user-facing design, with its reasoning, is
   `notes/function-design.md`; the original build spec is
   `notes/build-package-prompt.md`. `notes/` holds planning documents and
