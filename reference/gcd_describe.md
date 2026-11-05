@@ -40,7 +40,8 @@ and:
 
 - `$columns`: the column dictionary, as
   [`gcd_columns()`](https://georgiacivicdata.org/r/reference/gcd_columns.md)
-  returns it.
+  returns it by default (for a dataset, the joined name columns
+  included).
 
 - `$filters`: a tibble of every filter parameter: `param`, `kind`
   (categorical, foreign_key, dimension_attribute, metric_bound, year,

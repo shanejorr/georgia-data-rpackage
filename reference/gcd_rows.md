@@ -162,7 +162,10 @@ run on codes.
   and join.
 
 `labels = FALSE` asks for the dataset's own columns only, for large
-pulls. Either way, code columns that would be empty on every row (a
+pulls.
+[`gcd_columns()`](https://georgiacivicdata.org/r/reference/gcd_columns.md)
+takes the same argument and lists the name columns too, with `role`
+`"label"`. Either way, code columns that would be empty on every row (a
 district row's `school_code`, a state row's geography codes) are left
 out, so both settings give the same shape.
 

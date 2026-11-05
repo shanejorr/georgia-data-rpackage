@@ -17,6 +17,11 @@
   [`gcd_columns()`](https://georgiacivicdata.org/r/reference/gcd_columns.md)
   and
   [`gcd_contract()`](https://georgiacivicdata.org/r/reference/gcd_contract.md).
+  [`gcd_columns()`](https://georgiacivicdata.org/r/reference/gcd_columns.md)
+  lists the joined name columns
+  [`gcd_rows()`](https://georgiacivicdata.org/r/reference/gcd_rows.md)
+  returns by default (`labels = TRUE`), each after its code with `role`
+  `"label"`.
 - Get data:
   [`gcd_rows()`](https://georgiacivicdata.org/r/reference/gcd_rows.md)
   returns typed tibbles with place names beside codes, every category
