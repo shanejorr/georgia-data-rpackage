@@ -110,8 +110,9 @@ Useful links:
 
 ## Author
 
-**Maintainer**: Shane Orr <shane.j.orr@gmail.com> \[copyright holder\]
+**Maintainer**: Shane Orr <shane@georgiacivicdata.org> \[copyright
+holder\]
 
 Authors:
 
-- Shane Orr <shane.j.orr@gmail.com> \[copyright holder\]
+- Shane Orr <shane@georgiacivicdata.org> \[copyright holder\]
