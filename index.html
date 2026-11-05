@@ -24,6 +24,7 @@
 <meta property="og:description" content="An R client for the Georgia Civic Data API: education, Census, immigration and health data about Georgia as tidy tibbles, school attendance zones as sf objects, and point and address lookups.
 ">
 <link rel="canonical" href="https://georgiacivicdata.org/r/index.html">
+<link rel="alternate" type="text/markdown" href="index.md" title="Markdown">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -49,6 +50,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/analysis.html">Analyzing Georgia data</a></li>
     <li><a class="dropdown-item" href="articles/school-zones.html">School zones and places</a></li>
+    <li><a class="dropdown-item" href="articles/agents.html">For LLM agents</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -77,10 +79,7 @@
 <p>The data covers education, Census, health, and immigration. Geographic detail spans from the whole state down to single schools and Census tracts. Each dataset comes with a data contract that documents its source, its columns, and the limits of the data.</p>
 <p>With <code>georgiacivicdata</code> you can:</p>
 <ul>
-<li>Find Georgia datasets, read the documentation, and get rows, all from
-<ol start="18" style="list-style-type: upper-alpha"><li>
-</li></ol>
-</li>
+<li>Find Georgia datasets, read the documentation, and get rows in R.</li>
 <li>Get tibbles with consistent column types: codes stay text so leading zeros survive, years are integers, and rates are proportions between 0 and 1.</li>
 <li>See every school, district, and county code with its name and filter by name instead of code.</li>
 <li>Get school attendance zones and district boundaries as ‘sf’ objects, ready to map.</li>

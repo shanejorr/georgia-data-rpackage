@@ -19,8 +19,7 @@ source, its columns, and the limits of the data.
 
 With `georgiacivicdata` you can:
 
-- Find Georgia datasets, read the documentation, and get rows, all from
-  18. 
+- Find Georgia datasets, read the documentation, and get rows in R.
 - Get tibbles with consistent column types: codes stay text so leading
   zeros survive, years are integers, and rates are proportions between 0
   and 1.
