@@ -415,17 +415,28 @@ Components:
 The column dictionary as a tidy table.
 
 ```r
-gcd_columns(name)
+gcd_columns(name, labels = TRUE)
 ```
 
 **Output:** a tibble, one row per column: `column`, `label`, `type`,
-`role` (year, foreign key, categorical, metric), `unit` (count,
-proportion, rate_per_population, ...), `is_key_metric`,
+`role` (year, foreign key, categorical, metric, label), `label_of`,
+`unit` (count, proportion, rate_per_population, ...), `is_key_metric`,
 `metric_component` (numerator / denominator), `nullable`,
 `valid_values` (list), `description`, `null_meaning`.
 
 **Notes**
 
+- `labels` mirrors `gcd_rows()`: with `TRUE` (default) the dictionary
+  also lists the joined name columns (`district_name`,
+  `demographic_label`, ...), each after its code, with role `"label"`
+  and `label_of` naming the code. Their descriptions come from the
+  lookup tables' schemas (one cached request per lookup table). Without
+  this, the default `gcd_rows()` output had columns the dictionary did
+  not explain. `gcd_describe()$columns` uses the default.
+- The dictionary is every column a dataset *can* return; `detail` and
+  `columns` decide what one `gcd_rows()` call returns (empty code
+  columns such as a county row's `tract_geoid` are dropped). A `detail`
+  argument here was rejected as more surface for little gain.
 - Works for lookup tables too (same columns where they apply).
 - This is the function people will reach for most after `gcd_rows()`:
   "what does `pct_proficient_learner_or_above` mean, and is it 0-1?"

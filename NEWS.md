@@ -7,7 +7,9 @@
 * Find data: `gcd_datasets()` lists the catalog and `gcd_search()` ranks
   datasets from plain words, in English or Spanish.
 * Understand a dataset: `gcd_describe()` (with a readable print method),
-  `gcd_columns()` and `gcd_contract()`.
+  `gcd_columns()` and `gcd_contract()`. `gcd_columns()` lists the joined
+  name columns `gcd_rows()` returns by default (`labels = TRUE`), each
+  after its code with `role` `"label"`.
 * Get data: `gcd_rows()` returns typed tibbles with place names beside
   codes, every category the filters don't exclude, the API's advisories as
   messages, and a `gcd_meta` attribute; large results download in full as

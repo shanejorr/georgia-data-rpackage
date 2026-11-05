@@ -24,7 +24,8 @@
 #'   `"lookup"`), `title`, `summary`, `description`, `source`,
 #'   `source_url`, `years` (integer), `year_gaps`, `detail_levels`,
 #'   `default_detail`, `grain`, `key_metric`, and:
-#'   - `$columns`: the column dictionary, as [gcd_columns()] returns it.
+#'   - `$columns`: the column dictionary, as [gcd_columns()] returns it
+#'     by default (for a dataset, the joined name columns included).
 #'   - `$filters`: a tibble of every filter parameter: `param`, `kind`
 #'     (categorical, foreign_key, dimension_attribute, metric_bound, year,
 #'     detail, ...), `values` (list-column of allowed values),
@@ -64,7 +65,18 @@ gcd_describe <- function(name) {
 #' whether it is a numerator or denominator. This is the place to check
 #' "what does `pct_proficient_learner_or_above` mean, and is it 0-1?".
 #'
+#' The dictionary lists every column a dataset can return. Which ones a
+#' given [gcd_rows()] call returns also depends on its `detail` and
+#' `columns`: code columns that would be empty on every row (a county
+#' row's `tract_geoid`, a district row's `school_code`) are left out.
+#'
 #' @inheritParams gcd_describe
+#' @param labels `TRUE` (default) also lists the name columns that
+#'   [gcd_rows()] joins in by default (`district_name`, `county_name`,
+#'   `demographic_label`, ...), each right after its code, with `role`
+#'   `"label"`. `FALSE` lists the dataset's own columns only, matching
+#'   `gcd_rows(labels = FALSE)`. Labels come only with datasets; lookup
+#'   tables and geometry datasets ignore this argument.
 #' @returns A tibble, one row per column, with columns:
 #'   - `column`: the column name.
 #'   - `label`: a short display name.
@@ -72,8 +84,10 @@ gcd_describe <- function(name) {
 #'     `"date"`, which [gcd_rows()] maps to integer, double, character,
 #'     logical and Date.
 #'   - `role`: `"year"`, a foreign key (`"fk_district"`, `"fk_school"`,
-#'     ...), `"categorical"` or `"metric"` for datasets; `"key"` or
-#'     `"attribute"` for lookup tables.
+#'     ...), `"categorical"`, `"metric"` or `"label"` (a joined name
+#'     column) for datasets; `"key"` or `"attribute"` for lookup tables.
+#'   - `label_of`: for a `"label"` column, the code column it names
+#'     (`"district_code"`, `"demographic"`, ...); otherwise `NA`.
 #'   - `unit`: `"count"`, `"proportion"` (0-1 scale), a rate unit, ...
 #'   - `is_key_metric`: logical, `TRUE` for the dataset's headline metric.
 #'   - `metric_component`: `"numerator"` or `"denominator"` for the counts
@@ -83,19 +97,30 @@ gcd_describe <- function(name) {
 #'   - `description`: the full definition.
 #'   - `null_meaning`: what a missing value means in this column.
 #'
-#'   Fields that don't apply (labels and units for lookup tables, most
-#'   fields for geometry datasets) are `NA`.
+#'   Fields that don't apply (labels and units for lookup tables and
+#'   joined name columns, most fields for geometry datasets) are `NA`. A
+#'   joined name column's `description` and `nullable` come from its lookup
+#'   table; see [gcd_dimension()].
 #' @family describe a dataset
 #' @seealso [gcd_describe()] for the whole schema.
 #' @export
 #' @examplesIf interactive()
 #' gcd_columns("graduation_rate_4_year_cohort")
+#' gcd_columns("graduation_rate_4_year_cohort", labels = FALSE)
 #' gcd_columns("schools")
-gcd_columns <- function(name) {
+gcd_columns <- function(name, labels = TRUE) {
   check_name_arg(name)
+  check_flag(labels)
   kind <- resource_kind(name)
-  schema <- if (kind == "lookup") lookup_schema(name) else dataset_schema(name)
-  columns_tibble(schema, kind)
+  if (kind == "lookup") {
+    return(columns_tibble(lookup_schema(name), kind))
+  }
+  schema <- dataset_schema(name)
+  out <- columns_tibble(schema, kind)
+  if (labels && kind == "table") {
+    out <- add_label_columns(out, schema)
+  }
+  out
 }
 
 #' Get a dataset's data contract
@@ -179,7 +204,7 @@ describe_table <- function(schema) {
     default_detail = schema$default_detail,
     grain = as.character(unlist(schema$grain)),
     key_metric = schema$key_metric,
-    columns = columns_tibble(schema, "table"),
+    columns = add_label_columns(columns_tibble(schema, "table"), schema),
     filters = filters_tibble(schema),
     notes = notes_list(schema),
     raw = drop_internal(schema)
@@ -240,7 +265,8 @@ columns_tibble <- function(schema, kind) {
   if (!length(cols)) {
     return(tibble::tibble(
       column = character(), label = character(), type = character(),
-      role = character(), unit = character(), is_key_metric = logical(),
+      role = character(), label_of = character(), unit = character(),
+      is_key_metric = logical(),
       metric_component = character(), nullable = logical(),
       valid_values = list(), description = character(),
       null_meaning = character()
@@ -252,6 +278,7 @@ columns_tibble <- function(schema, kind) {
     label = field("label"),
     type = field("type"),
     role = field("role"),
+    label_of = NA_character_,
     unit = field("unit"),
     is_key_metric = NA,
     metric_component = field("metric_component"),
@@ -263,9 +290,55 @@ columns_tibble <- function(schema, kind) {
   out$is_key_metric <- !is.na(key_metric) & out$column == key_metric
   apply_schema_types(out, c(
     column = "string", label = "string", type = "string", role = "string",
-    unit = "string", metric_component = "string", nullable = "boolean",
-    description = "string", null_meaning = "string"
+    label_of = "string", unit = "string", metric_component = "string",
+    nullable = "boolean", description = "string", null_meaning = "string"
   ))
+}
+
+#' Add the joined name columns to a dataset's column dictionary
+#'
+#' Driven by the schema's `foreign_keys[].attribute_columns_added`, the
+#' same list `relocate_labels()` places in the rows. Each name column goes
+#' right after its code, with its description and nullability from the
+#' lookup table's schema (one cached request per lookup table). Its type
+#' is `"string"`, as `row_types()` types it in the rows.
+#' @noRd
+add_label_columns <- function(cols, schema, call = rlang::caller_env()) {
+  for (fk in schema$foreign_keys) {
+    added <- setdiff(as.character(unlist(fk$attribute_columns_added)), cols$column)
+    if (!length(added)) {
+      next
+    }
+    target <- lookup_schema(fk$target_object, call = call)$columns
+    target <- stats::setNames(target, vapply(target, function(c) c$name, character(1)))
+    from <- function(col, f) target[[col]][[f]]
+    rows <- tibble::tibble(
+      column = added,
+      label = NA_character_,
+      type = "string",
+      role = "label",
+      label_of = fk$column,
+      unit = NA_character_,
+      is_key_metric = FALSE,
+      metric_component = NA_character_,
+      nullable = vapply(added, function(a) from(a, "nullable") %||% NA, logical(1),
+                        USE.NAMES = FALSE),
+      valid_values = lapply(added, function(a) flatten_value(from(a, "valid_values"))),
+      description = vapply(added, function(a) {
+        from(a, "description") %||% paste0("Joined from the ", fk$target_object,
+                                           " lookup table.")
+      }, character(1), USE.NAMES = FALSE),
+      null_meaning = NA_character_
+    )
+    # After the code and any labels already placed after it
+    at <- match(fk$column, cols$column)
+    if (is.na(at)) {
+      at <- nrow(cols)
+    }
+    cols <- tibble::as_tibble(rbind(cols[seq_len(at), ], rows,
+                                    cols[seq_len(nrow(cols) - at) + at, ]))
+  }
+  cols
 }
 
 #' The filters table of a dataset schema
@@ -441,10 +514,20 @@ describe_lines_table <- function(x) {
     fmt("{.strong Grain:} {paste(x$grain, collapse = ', ')}"),
     if (is_string(x$key_metric)) fmt("{.strong Key metric:} {x$key_metric}"),
     if (length(single)) fmt("{.strong Pick one value of:} {paste(single, collapse = ', ')} (no total; don't mix values in one summary)"),
-    fmt("{.strong Columns:} {nrow(x$columns)} (see {.code $columns}); {.strong filters:} {nrow(x$filters)} (see {.code $filters})"),
+    columns_line(x$columns, x$filters),
     notes_lines(x$notes)
   )
   lines
+}
+
+#' "Columns: 7, plus 6 joined name columns (see `$columns`); filters: ..."
+#' @noRd
+columns_line <- function(columns, filters) {
+  n_label <- sum(columns$role %in% "label")
+  n_own <- nrow(columns) - n_label
+  joined <- if (n_label) paste0(", plus ", n_label, " joined name column",
+                                if (n_label > 1) "s") else ""
+  fmt("{.strong Columns:} {n_own}{joined} (see {.code $columns}); {.strong filters:} {nrow(filters)} (see {.code $filters})")
 }
 
 #' @noRd

@@ -18,7 +18,8 @@ Components include \code{name}, \code{kind} (\code{"table"}, \code{"geometry"} o
 \code{source_url}, \code{years} (integer), \code{year_gaps}, \code{detail_levels},
 \code{default_detail}, \code{grain}, \code{key_metric}, and:
 \itemize{
-\item \verb{$columns}: the column dictionary, as \code{\link[=gcd_columns]{gcd_columns()}} returns it.
+\item \verb{$columns}: the column dictionary, as \code{\link[=gcd_columns]{gcd_columns()}} returns it
+by default (for a dataset, the joined name columns included).
 \item \verb{$filters}: a tibble of every filter parameter: \code{param}, \code{kind}
 (categorical, foreign_key, dimension_attribute, metric_bound, year,
 detail, ...), \code{values} (list-column of allowed values),

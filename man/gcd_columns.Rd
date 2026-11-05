@@ -4,12 +4,19 @@
 \alias{gcd_columns}
 \title{Get a dataset's column dictionary}
 \usage{
-gcd_columns(name)
+gcd_columns(name, labels = TRUE)
 }
 \arguments{
 \item{name}{A dataset, lookup table or geometry dataset name, such as
 \code{"graduation_rate_4_year_cohort"}, \code{"schools"} or
 \code{"school_attendance_zones"}. Names are unique across all three kinds.}
+
+\item{labels}{\code{TRUE} (default) also lists the name columns that
+\code{\link[=gcd_rows]{gcd_rows()}} joins in by default (\code{district_name}, \code{county_name},
+\code{demographic_label}, ...), each right after its code, with \code{role}
+\code{"label"}. \code{FALSE} lists the dataset's own columns only, matching
+\code{gcd_rows(labels = FALSE)}. Labels come only with datasets; lookup
+tables and geometry datasets ignore this argument.}
 }
 \value{
 A tibble, one row per column, with columns:
@@ -20,8 +27,10 @@ A tibble, one row per column, with columns:
 \code{"date"}, which \code{\link[=gcd_rows]{gcd_rows()}} maps to integer, double, character,
 logical and Date.
 \item \code{role}: \code{"year"}, a foreign key (\code{"fk_district"}, \code{"fk_school"},
-...), \code{"categorical"} or \code{"metric"} for datasets; \code{"key"} or
-\code{"attribute"} for lookup tables.
+...), \code{"categorical"}, \code{"metric"} or \code{"label"} (a joined name
+column) for datasets; \code{"key"} or \code{"attribute"} for lookup tables.
+\item \code{label_of}: for a \code{"label"} column, the code column it names
+(\code{"district_code"}, \code{"demographic"}, ...); otherwise \code{NA}.
 \item \code{unit}: \code{"count"}, \code{"proportion"} (0-1 scale), a rate unit, ...
 \item \code{is_key_metric}: logical, \code{TRUE} for the dataset's headline metric.
 \item \code{metric_component}: \code{"numerator"} or \code{"denominator"} for the counts
@@ -32,18 +41,26 @@ a rate is built from.
 \item \code{null_meaning}: what a missing value means in this column.
 }
 
-Fields that don't apply (labels and units for lookup tables, most
-fields for geometry datasets) are \code{NA}.
+Fields that don't apply (labels and units for lookup tables and
+joined name columns, most fields for geometry datasets) are \code{NA}. A
+joined name column's \code{description} and \code{nullable} come from its lookup
+table; see \code{\link[=gcd_dimension]{gcd_dimension()}}.
 }
 \description{
 The columns of a dataset, lookup table or geometry dataset as a tidy
 table: what each column means, its type, its unit and, for metrics,
 whether it is a numerator or denominator. This is the place to check
 "what does \code{pct_proficient_learner_or_above} mean, and is it 0-1?".
+
+The dictionary lists every column a dataset can return. Which ones a
+given \code{\link[=gcd_rows]{gcd_rows()}} call returns also depends on its \code{detail} and
+\code{columns}: code columns that would be empty on every row (a county
+row's \code{tract_geoid}, a district row's \code{school_code}) are left out.
 }
 \examples{
 \dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
 gcd_columns("graduation_rate_4_year_cohort")
+gcd_columns("graduation_rate_4_year_cohort", labels = FALSE)
 gcd_columns("schools")
 \dontshow{\}) # examplesIf}
 }

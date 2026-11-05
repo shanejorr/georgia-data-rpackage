@@ -4,6 +4,7 @@ test_that("gcd_describe() summarizes a dataset", {
   httptest2::with_mock_dir("m/desc", {
     d <- gcd_describe("graduation_rate_4_year_cohort")
     cols <- gcd_columns("graduation_rate_4_year_cohort")
+    own <- gcd_columns("graduation_rate_4_year_cohort", labels = FALSE)
   })
   expect_s3_class(d, "gcd_description")
   expect_equal(d$kind, "table")
@@ -17,13 +18,50 @@ test_that("gcd_describe() summarizes a dataset", {
   expect_false(any(c("sub_topic", "topic", "key") %in% names(d$raw)))
   expect_snapshot(print(d))
 
-  expect_named(cols, c("column", "label", "type", "role", "unit", "is_key_metric",
-                       "metric_component", "nullable", "valid_values",
-                       "description", "null_meaning"))
+  expect_named(cols, c("column", "label", "type", "role", "label_of", "unit",
+                       "is_key_metric", "metric_component", "nullable",
+                       "valid_values", "description", "null_meaning"))
   expect_equal(cols$column[cols$is_key_metric], "graduation_rate")
+
+  # The joined name columns sit right after their codes, as in gcd_rows()
+  labels <- c("district_name", "district_census_id", "district_type",
+              "school_name", "demographic_label", "demographic_category")
+  expect_equal(cols$column[cols$role %in% "label"], labels)
+  expect_equal(own$column, setdiff(cols$column, labels))
+  expect_true(all(is.na(own$label_of)))
+  at <- match(c("district_code", "school_code", "demographic"), cols$column)
+  expect_equal(cols$column[at + 1], c("district_name", "school_name", "demographic_label"))
+  expect_equal(cols$label_of[cols$column == "demographic_category"], "demographic")
+  expect_equal(unique(cols$type[cols$role %in% "label"]), "string")
+  expect_false(any(cols$is_key_metric[cols$role %in% "label"]))
+  expect_match(cols$description[cols$column == "school_name"], ".")
+  expect_true("race" %in% cols$valid_values[[which(cols$column == "demographic_category")]])
   expect_equal(cols$metric_component[cols$column == "num_cohort"], "denominator")
   expect_type(cols$valid_values, "list")
   expect_true("all" %in% cols$valid_values[[which(cols$column == "demographic")]])
+})
+
+test_that("label columns fall back to a plain description", {
+  local_gcd_state()
+  seed_meta(c("dimensions", "counties"), list(
+    name = "counties",
+    columns = list(list(name = "county_fips", type = "string", role = "key"))
+  ))
+  schema <- list(
+    columns = list(
+      list(name = "year", type = "integer", role = "year"),
+      list(name = "county_fips", type = "string", role = "fk_county"),
+      list(name = "rate", type = "number", role = "metric")
+    ),
+    foreign_keys = list(list(column = "county_fips", target_object = "counties",
+                             attribute_columns_added = list("county_name")))
+  )
+  cols <- add_label_columns(columns_tibble(schema, "table"), schema)
+  expect_equal(cols$column, c("year", "county_fips", "county_name", "rate"))
+  expect_equal(cols$description[3], "Joined from the counties lookup table.")
+  expect_true(is.na(cols$nullable[3]))
+  expect_equal(cols$valid_values[[3]], character())
+  expect_snapshot(error = TRUE, gcd_columns("infant_deaths", labels = NA))
 })
 
 test_that("gcd_describe() lists columns that need one value", {

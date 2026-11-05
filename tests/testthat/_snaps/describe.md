@@ -13,7 +13,8 @@
       Detail levels: districts, schools (default), states
       Grain: year, district_code, school_code, demographic
       Key metric: graduation_rate
-      Columns: 7 (see `$columns`); filters: 18 (see `$filters`)
+      Columns: 7, plus 6 joined name columns (see `$columns`); filters: 18 (see
+      `$filters`)
       
       -- Notes -----------------------------------------------------------------------
       * Missing values: NA means suppressed (small counts), not zero; zeros are real
@@ -56,6 +57,14 @@
         and the cohort rises from 113,364 to 131,012 because the method changed, not
         because fewer students graduated.
 
+# label columns fall back to a plain description
+
+    Code
+      gcd_columns("infant_deaths", labels = NA)
+    Condition
+      Error in `gcd_columns()`:
+      ! `labels` must be `TRUE` or `FALSE`.
+
 # gcd_describe() lists columns that need one value
 
     Code
@@ -73,7 +82,8 @@
       Key metric: indicator_score
       Pick one value of: grade_cluster, subject (no total; don't mix values in one
       summary)
-      Columns: 17 (see `$columns`); filters: 34 (see `$filters`)
+      Columns: 17, plus 6 joined name columns (see `$columns`); filters: 34 (see
+      `$filters`)
       
       -- Notes -----------------------------------------------------------------------
       * Missing values: NA means suppressed (small counts), not zero; zeros are real.
