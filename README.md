@@ -5,6 +5,7 @@
 
 <!-- badges: start -->
 
+[![CRAN status](https://www.r-pkg.org/badges/version/georgiacivicdata)](https://CRAN.R-project.org/package=georgiacivicdata)
 [![R-CMD-check](https://github.com/shanejorr/georgia-data-rpackage/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/shanejorr/georgia-data-rpackage/actions/workflows/R-CMD-check.yaml)
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
@@ -43,7 +44,13 @@ There is no API key and nothing to configure.
 
 ## Installation
 
-Install the development version from GitHub:
+Install the released version from CRAN:
+
+``` r
+install.packages("georgiacivicdata")
+```
+
+Or install the development version from GitHub:
 
 ``` r
 # install.packages("pak")

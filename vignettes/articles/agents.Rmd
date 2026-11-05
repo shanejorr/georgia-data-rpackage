@@ -41,8 +41,9 @@ page of every function and article. The pages to read first:
 
 ## Writing code with the package
 
-- Install it with `pak::pak("shanejorr/georgia-data-rpackage")` and load it
-  with `library(georgiacivicdata)`. There is no API key.
+- Install it from CRAN with `install.packages("georgiacivicdata")` (or the
+  development version with `pak::pak("shanejorr/georgia-data-rpackage")`)
+  and load it with `library(georgiacivicdata)`. There is no API key.
 - Find a dataset with `gcd_search("plain words")` or `gcd_datasets()`, read
   it with `gcd_describe(name)` and `gcd_columns(name)`, then get rows with
   `gcd_rows(name, ...)`.
