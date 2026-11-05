@@ -95,11 +95,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Shane Orr \email{shane.j.orr@gmail.com} [copyright holder]
+\strong{Maintainer}: Shane Orr \email{shane@georgiacivicdata.org} [copyright holder]
 
 Authors:
 \itemize{
-  \item Shane Orr \email{shane.j.orr@gmail.com} [copyright holder]
+  \item Shane Orr \email{shane@georgiacivicdata.org} [copyright holder]
 }
 
 }

@@ -2,7 +2,7 @@ Package: georgiacivicdata
 Title: Access Public Data from 'Georgia Civic Data'
 Version: 0.1.0
 Authors@R: 
-    person("Shane", "Orr", , "shane.j.orr@gmail.com", role = c("aut", "cre", "cph"))
+    person("Shane", "Orr", , "shane@georgiacivicdata.org", role = c("aut", "cre", "cph"))
 Description: A client for the 'Georgia Civic Data' REST API (documented at
     <https://georgiacivicdata.org/docs>), which publishes cleaned public
     data about Georgia: education (graduation, assessments, enrollment,
