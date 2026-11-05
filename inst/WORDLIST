@@ -10,7 +10,9 @@ Eastside
 Forsyth
 GEOID
 Gwinnett
+LLM
 Lifecycle
+MCP
 NCES
 ODCS
 OR'd
@@ -26,6 +28,7 @@ geocoded
 geocoder
 geocoder's
 geocodes
+llms
 metric's
 nullable
 prematurity

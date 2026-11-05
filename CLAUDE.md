@@ -67,7 +67,8 @@ write it to `.Renviron` or any file.
 | `R/utils.R` | small shared helpers |
 | `tests/testthat/` | tests; recorded fixtures in short directories under `tests/testthat/` (httptest2) |
 | `vignettes/*.Rmd.orig` | vignette sources; `*.Rmd` are knitted from them by `vignettes/precompile.R` (precomputed; figures land in `vignettes/`) |
-| `pkgdown/canonical.R` | adds `<link rel="canonical">` (to `georgiacivicdata.org/r/`) to every built page; run by the pkgdown workflow |
+| `vignettes/articles/agents.Rmd` | the "For LLM agents" page: a pkgdown-only article (build-ignored, not a vignette), listed in the Articles menu |
+| `pkgdown/canonical.R` | adds `<link rel="canonical">` (to `georgiacivicdata.org/r/`) and `<link rel="alternate" type="text/markdown">` (to the page's `.md` copy) to every built page; run by the pkgdown workflow |
 | `.github/workflows/` | `R-CMD-check.yaml` (5-platform matrix), `pkgdown.yaml` (deploys to `gh-pages`), `rhub.yaml` (on demand), `test-coverage.yaml`, `live-api.yaml` (weekly live tests) |
 
 ## Conventions
@@ -168,6 +169,10 @@ write it to `.Renviron` or any file.
   (Shane's repo). `_pkgdown.yml` sets `url: https://georgiacivicdata.org/r/`.
 - No custom domain on GitHub Pages and no `CNAME` on `gh-pages`: a
   custom domain would redirect `github.io` and break the rewrite.
+- For LLM agents, pkgdown 2.2 writes `llms.txt` and a Markdown copy of
+  every page (`page.md` beside `page.html`); `pkgdown/canonical.R` links
+  each copy from its page's `<head>`. `vignettes/articles/agents.Rmd`
+  documents both: keep it true when either changes.
 
 ## Gotchas learned while building
 
@@ -181,6 +186,10 @@ write it to `.Renviron` or any file.
   `tools::showNonASCIIfile()` finds them.
 - pkgdown renders every top-level `.md` file, so the pkgdown workflow
   deletes `CLAUDE.md` and `AGENTS.md` from its checkout before building.
+- pkgdown's Pandoc reads a wrapped line that starts with one letter and a
+  period ("R.") as a lettered list item, so the site showed "all from R."
+  as a list starting at 18. Knitted Markdown wraps at 72 columns: reword a
+  sentence rather than let "R." start a line.
 - The httptest2 redactor (`tests/testthat/helper-gcd.R`) shortens URL
   prefixes so fixture paths stay under 100 bytes, keeps only the headers
   the package reads, and stores YAML and GeoJSON as plain text files.

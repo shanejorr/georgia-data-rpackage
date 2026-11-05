@@ -76,6 +76,10 @@ articles:
   contents:
   - analysis
   - school-zones
+- title: For LLM agents
+  navbar: ~
+  contents:
+  - articles/agents
 footer:
   structure:
     left:
