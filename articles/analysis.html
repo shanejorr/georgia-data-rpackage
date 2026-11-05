@@ -83,13 +83,11 @@
 <!-- This vignette is precomputed: edit analysis.Rmd.orig and run
 vignettes/precompile.R. It calls the live API, which CRAN builds can't. -->
 <p>This article puts two datasets side by side: infant mortality from
-the Georgia Department of Public Health, and the poverty rate from the
+the Georgia Department of Public Health and the poverty rate from the
 U.S. Census. Infant mortality, the number of babies who die before their
 first birthday per 1,000 live births, is one of the most widely used
 measures of a community’s health. The article shows the steps any such
-analysis needs: pick the datasets, confirm they share a join key and
-years, read the dataset’s notes, pool rates from their counts, and
-respect breaks in a series.</p>
+analysis needs.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://georgiacivicdata.org/r/">georgiacivicdata</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
@@ -184,8 +182,8 @@ rate:</p>
 <span><span class="co">#&gt;   county_years with_a_rate median_births</span></span>
 <span><span class="co">#&gt;          &lt;int&gt;       &lt;int&gt;         &lt;int&gt;</span></span>
 <span><span class="co">#&gt; 1          795         385           258</span></span></code></pre></div>
-<p>Infant deaths are rare, and most of Georgia’s 159 counties are small:
-in a typical county-year a few hundred babies are born, and a single
+<p>Infant deaths are rare and most of Georgia’s 159 counties are small.
+In a typical county-year a few hundred babies are born and a single
 death moves the rate by several points. That is why about half of the
 county-years have no published rate at all. A county’s rate over several
 years is the sum of its deaths over the sum of its births, not the
@@ -329,132 +327,6 @@ born in the lowest-poverty third. The lowest-poverty third holds most of
 the state’s births, so it sets the state’s rate.</p>
 </div>
 <div class="section level2">
-<h2 id="poverty-and-race">Poverty and race<a class="anchor" aria-label="anchor" href="#poverty-and-race"></a>
-</h2>
-<p>Infant mortality in Georgia differs most of all by race. The
-<code>demographic</code> filter gives the same counts for each racial
-and ethnic group; <code>black</code> and <code>white</code> are
-non-Hispanic. Pooling them within the same county poverty groups asks
-whether the county’s poverty rate accounts for the gap:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">infant_race</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gcd_rows.html">gcd_rows</a></span><span class="op">(</span></span>
-<span>  <span class="st">"infant_deaths"</span>,</span>
-<span>  detail <span class="op">=</span> <span class="st">"counties"</span>,</span>
-<span>  demographic <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"black"</span>, <span class="st">"white"</span><span class="op">)</span>,</span>
-<span>  cause <span class="op">=</span> <span class="st">"all"</span>,</span>
-<span>  age_at_death <span class="op">=</span> <span class="st">"all"</span>,</span>
-<span>  year <span class="op">=</span> <span class="fl">2020</span><span class="op">:</span><span class="fl">2024</span>,</span>
-<span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">by_race</span> <span class="op">&lt;-</span> <span class="va">infant_race</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">inner_join</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">thirds</span>, <span class="va">county_fips</span>, <span class="va">poverty_group</span><span class="op">)</span>, by <span class="op">=</span> <span class="st">"county_fips"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">poverty_group</span>, <span class="va">demographic_label</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>deaths <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">num_deaths</span><span class="op">)</span>,</span>
-<span>            births <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">num_births</span><span class="op">)</span>,</span>
-<span>            infant_mortality <span class="op">=</span> <span class="fl">1000</span> <span class="op">*</span> <span class="va">deaths</span> <span class="op">/</span> <span class="va">births</span>,</span>
-<span>            .groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">by_race</span></span>
-<span><span class="co">#&gt; # A tibble: 6 × 5</span></span>
-<span><span class="co">#&gt;   poverty_group demographic_label deaths births infant_mortality</span></span>
-<span><span class="co">#&gt;   &lt;fct&gt;         &lt;chr&gt;              &lt;int&gt;  &lt;int&gt;            &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 Lowest third  Black               1104 118808             9.29</span></span>
-<span><span class="co">#&gt; 2 Lowest third  White                747 166021             4.50</span></span>
-<span><span class="co">#&gt; 3 Middle third  Black                684  56954            12.0 </span></span>
-<span><span class="co">#&gt; 4 Middle third  White                399  67186             5.94</span></span>
-<span><span class="co">#&gt; 5 Highest third Black                362  29989            12.1 </span></span>
-<span><span class="co">#&gt; 6 Highest third White                165  32237             5.12</span></span></code></pre></div>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">by_race</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">poverty_group</span>, <span class="va">infant_mortality</span>, fill <span class="op">=</span> <span class="va">demographic_label</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_bar.html" class="external-link">geom_col</a></span><span class="op">(</span>position <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/position_dodge.html" class="external-link">position_dodge</a></span><span class="op">(</span>width <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span>, width <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_fill_manual</a></span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#7f1d1d"</span>, <span class="st">"#fca5a5"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
-<span>    x <span class="op">=</span> <span class="st">"Counties by 2020-2024 poverty rate"</span>,</span>
-<span>    y <span class="op">=</span> <span class="st">"Infant deaths per 1,000 live births"</span>,</span>
-<span>    fill <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>    title <span class="op">=</span> <span class="st">"Infant mortality by race within county poverty groups"</span></span>
-<span>  <span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<div class="figure">
-<img src="analysis-race-plot-1.png" alt="Bar chart of infant mortality for Black and white infants within each county poverty group." width="100%"><p class="caption">
-Infant mortality pooled from counts, 2020-2024, by county poverty group
-and race.
-</p>
-</div>
-<p>In every poverty group, Black infants die at about twice the rate of
-white infants. Black infants in the lowest-poverty counties die at a
-higher rate than white infants in the highest-poverty counties. County
-poverty goes with higher rates for Black infants, but it does not
-explain the gap between the two groups.</p>
-</div>
-<div class="section level2">
-<h2 id="a-trend-that-respects-the-series">A trend that respects the series<a class="anchor" aria-label="anchor" href="#a-trend-that-respects-the-series"></a>
-</h2>
-<p>To follow the gap over time, use the state rows, where the counts are
-large enough for yearly rates. The notes decide which years can be
-compared:</p>
-<ul>
-<li>Births to multiracial mothers jumped from hundreds a year to
-thousands in 2007 and 2008 while births to white mothers fell, most
-likely from Georgia’s revised birth certificate. Death records kept the
-infant’s race, so race-group rates in those years mix a recording change
-with real change. For counties, the notes advise comparing race-group
-rates over time from 2013 on; we use the same start for the state.</li>
-<li>OASIS says the 2010 rate is low from under-reporting, another reason
-to start after it.</li>
-</ul>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">state_race</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/gcd_rows.html">gcd_rows</a></span><span class="op">(</span></span>
-<span>  <span class="st">"infant_deaths"</span>,</span>
-<span>  detail <span class="op">=</span> <span class="st">"states"</span>,</span>
-<span>  demographic <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"black"</span>, <span class="st">"white"</span><span class="op">)</span>,</span>
-<span>  cause <span class="op">=</span> <span class="st">"all"</span>,</span>
-<span>  age_at_death <span class="op">=</span> <span class="st">"all"</span>,</span>
-<span>  year <span class="op">=</span> <span class="fl">2013</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">infant_info</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>,</span>
-<span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">state_race</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">year</span>, <span class="va">death_rate_per_1k_births</span>, colour <span class="op">=</span> <span class="va">demographic_label</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>linewidth <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_colour_manual</a></span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#7f1d1d"</span>, <span class="st">"#fca5a5"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_continuous</a></span><span class="op">(</span>breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">2013</span>, <span class="fl">2025</span>, by <span class="op">=</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/expand_limits.html" class="external-link">expand_limits</a></span><span class="op">(</span>y <span class="op">=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
-<span>    x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="st">"Infant deaths per 1,000 live births"</span>,</span>
-<span>    colour <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>    title <span class="op">=</span> <span class="st">"Georgia infant mortality by race"</span>,</span>
-<span>    caption <span class="op">=</span> <span class="st">"Non-Hispanic Black and white infants. Deaths by the infant's race,\nbirths by the mother's race."</span></span>
-<span>  <span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<div class="figure">
-<img src="analysis-trend-1.png" alt="Line chart of Georgia's infant mortality rates for Black and white infants by year since 2013." width="100%"><p class="caption">
-Georgia’s published infant mortality rates by race, 2013 on.
-</p>
-</div>
-<p>Yearly rates still move by a point or more from chance. Pooling a few
-years at a time steadies them:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">state_race</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>period <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cut.html" class="external-link">cut</a></span><span class="op">(</span><span class="va">year</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2012</span>, <span class="fl">2016</span>, <span class="fl">2020</span>, <span class="fl">2025</span><span class="op">)</span>,</span>
-<span>                      labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2013-2016"</span>, <span class="st">"2017-2020"</span>, <span class="st">"2021-2025"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">period</span>, <span class="va">demographic</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>infant_mortality <span class="op">=</span> <span class="fl">1000</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">num_deaths</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">num_births</span><span class="op">)</span>,</span>
-<span>            .groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_wider.html" class="external-link">pivot_wider</a></span><span class="op">(</span>names_from <span class="op">=</span> <span class="va">demographic</span>, values_from <span class="op">=</span> <span class="va">infant_mortality</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>ratio <span class="op">=</span> <span class="va">black</span> <span class="op">/</span> <span class="va">white</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 3 × 4</span></span>
-<span><span class="co">#&gt;   period    black white ratio</span></span>
-<span><span class="co">#&gt;   &lt;fct&gt;     &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 2013-2016  12.4  5.46  2.27</span></span>
-<span><span class="co">#&gt; 2 2017-2020  11.0  5.05  2.17</span></span>
-<span><span class="co">#&gt; 3 2021-2025  10.9  4.82  2.25</span></span></code></pre></div>
-<p>The white rate has edged down since the mid-2010s. The Black rate
-fell to its lowest in 2020 and 2021 and then rose again. Throughout, the
-Black rate has stayed a little more than twice the white rate.</p>
-</div>
-<div class="section level2">
 <h2 id="what-these-figures-cant-tell">What these figures can’t tell<a class="anchor" aria-label="anchor" href="#what-these-figures-cant-tell"></a>
 </h2>
 <ul>
@@ -470,10 +342,6 @@ there.</li>
 <strong>Estimates carry error.</strong> The ACS poverty rate is a
 survey estimate with a margin of error, larger in small counties; a
 county near a group boundary could sit in either.</li>
-<li>
-<strong>Race is recorded twice.</strong> Deaths carry the infant’s
-race from the death certificate and births the mother’s from the birth
-certificate, so a group’s rate can be biased where the two differ.</li>
 <li>
 <strong>Small counts swing.</strong> A county’s rate on a few deaths
 says little on its own; group and pool before comparing places.</li>
