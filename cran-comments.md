@@ -9,7 +9,8 @@ the "New submission" note.
 
 ## Test environments
 
-* Local: Ubuntu 26.04, R 4.5.2, `devtools::check(remote = TRUE, manual = TRUE)`.
+* Local: macOS 26.6.2 (aarch64), R 4.6.2,
+  `devtools::check(remote = TRUE, manual = TRUE)`.
 * GitHub Actions: macOS (release), Windows (release), Ubuntu (devel,
   release, oldrel-1).
 * R-hub: linux (R-devel), macos-arm64 (R-devel), windows (R-devel),
