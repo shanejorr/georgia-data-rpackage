@@ -13,13 +13,10 @@ vignette: >
 vignettes/precompile.R. It calls the live API, which CRAN builds can't. -->
 
 This article puts two datasets side by side: infant mortality from the
-Georgia Department of Public Health, and the poverty rate from the U.S.
+Georgia Department of Public Health and the poverty rate from the U.S.
 Census. Infant mortality, the number of babies who die before their first
 birthday per 1,000 live births, is one of the most widely used measures of
-a community's health. The article shows the steps any such analysis needs:
-pick the datasets, confirm they share a join key and years, read the
-dataset's notes, pool rates from their counts, and respect breaks in a
-series.
+a community's health. The article shows the steps any such analysis needs.
 
 
 ``` r
@@ -134,8 +131,8 @@ infant |>
 #> 1          795         385           258
 ```
 
-Infant deaths are rare, and most of Georgia's 159 counties are small: in a
-typical county-year a few hundred babies are born, and a single death moves
+Infant deaths are rare and most of Georgia's 159 counties are small. In a
+typical county-year a few hundred babies are born and a single death moves
 the rate by several points. That is why about half of the county-years have
 no published rate at all. A county's rate over several years is the sum of its
 deaths over the sum of its births, not the average of its yearly rates:
@@ -303,145 +300,6 @@ before their first birthday at a rate about a third higher than babies born
 in the lowest-poverty third. The lowest-poverty third holds most of the
 state's births, so it sets the state's rate.
 
-## Poverty and race
-
-Infant mortality in Georgia differs most of all by race. The `demographic`
-filter gives the same counts for each racial and ethnic group; `black` and
-`white` are non-Hispanic. Pooling them within the same county poverty
-groups asks whether the county's poverty rate accounts for the gap:
-
-
-``` r
-infant_race <- gcd_rows(
-  "infant_deaths",
-  detail = "counties",
-  demographic = c("black", "white"),
-  cause = "all",
-  age_at_death = "all",
-  year = 2020:2024,
-  quiet = TRUE
-)
-
-by_race <- infant_race |>
-  inner_join(select(thirds, county_fips, poverty_group), by = "county_fips") |>
-  group_by(poverty_group, demographic_label) |>
-  summarise(deaths = sum(num_deaths),
-            births = sum(num_births),
-            infant_mortality = 1000 * deaths / births,
-            .groups = "drop")
-
-by_race
-#> # A tibble: 6 × 5
-#>   poverty_group demographic_label deaths births infant_mortality
-#>   <fct>         <chr>              <int>  <int>            <dbl>
-#> 1 Lowest third  Black               1104 118808             9.29
-#> 2 Lowest third  White                747 166021             4.50
-#> 3 Middle third  Black                684  56954            12.0 
-#> 4 Middle third  White                399  67186             5.94
-#> 5 Highest third Black                362  29989            12.1 
-#> 6 Highest third White                165  32237             5.12
-```
-
-
-``` r
-ggplot(by_race, aes(poverty_group, infant_mortality, fill = demographic_label)) +
-  geom_col(position = position_dodge(width = 0.8), width = 0.7) +
-  scale_fill_manual(values = c("#7f1d1d", "#fca5a5")) +
-  labs(
-    x = "Counties by 2020-2024 poverty rate",
-    y = "Infant deaths per 1,000 live births",
-    fill = NULL,
-    title = "Infant mortality by race within county poverty groups"
-  ) +
-  theme_minimal()
-```
-
-<div class="figure">
-<img src="analysis-race-plot-1.png" alt="Bar chart of infant mortality for Black and white infants within each county poverty group." width="100%" />
-<p class="caption">Infant mortality pooled from counts, 2020-2024, by county poverty group and race.</p>
-</div>
-
-In every poverty group, Black infants die at about twice the rate of white
-infants. Black infants in the lowest-poverty counties die at a higher rate
-than white infants in the highest-poverty counties. County poverty goes
-with higher rates for Black infants, but it does not explain the gap
-between the two groups.
-
-## A trend that respects the series
-
-To follow the gap over time, use the state rows, where the counts are
-large enough for yearly rates. The notes decide which years can be
-compared:
-
-- Births to multiracial mothers jumped from hundreds a year to thousands
-  in 2007 and 2008 while births to white mothers fell, most likely from
-  Georgia's revised birth certificate. Death records kept the infant's race,
-  so race-group rates in those years mix a recording change with real
-  change. For counties, the notes advise comparing race-group rates over
-  time from 2013 on; we use the same start for the state.
-- OASIS says the 2010 rate is low from under-reporting, another reason to
-  start after it.
-
-
-``` r
-state_race <- gcd_rows(
-  "infant_deaths",
-  detail = "states",
-  demographic = c("black", "white"),
-  cause = "all",
-  age_at_death = "all",
-  year = 2013:max(infant_info$years),
-  quiet = TRUE
-)
-```
-
-
-``` r
-ggplot(state_race, aes(year, death_rate_per_1k_births, colour = demographic_label)) +
-  geom_line(linewidth = 0.8) +
-  geom_point(size = 1.5) +
-  scale_colour_manual(values = c("#7f1d1d", "#fca5a5")) +
-  scale_x_continuous(breaks = seq(2013, 2025, by = 2)) +
-  expand_limits(y = 0) +
-  labs(
-    x = NULL, y = "Infant deaths per 1,000 live births",
-    colour = NULL,
-    title = "Georgia infant mortality by race",
-    caption = "Non-Hispanic Black and white infants. Deaths by the infant's race,\nbirths by the mother's race."
-  ) +
-  theme_minimal()
-```
-
-<div class="figure">
-<img src="analysis-trend-1.png" alt="Line chart of Georgia's infant mortality rates for Black and white infants by year since 2013." width="100%" />
-<p class="caption">Georgia's published infant mortality rates by race, 2013 on.</p>
-</div>
-
-Yearly rates still move by a point or more from chance. Pooling a few
-years at a time steadies them:
-
-
-``` r
-state_race |>
-  mutate(period = cut(year, c(2012, 2016, 2020, 2025),
-                      labels = c("2013-2016", "2017-2020", "2021-2025"))) |>
-  group_by(period, demographic) |>
-  summarise(infant_mortality = 1000 * sum(num_deaths) / sum(num_births),
-            .groups = "drop") |>
-  tidyr::pivot_wider(names_from = demographic, values_from = infant_mortality) |>
-  mutate(ratio = black / white)
-#> # A tibble: 3 × 4
-#>   period    black white ratio
-#>   <fct>     <dbl> <dbl> <dbl>
-#> 1 2013-2016  12.4  5.46  2.27
-#> 2 2017-2020  11.0  5.05  2.17
-#> 3 2021-2025  10.9  4.82  2.25
-```
-
-The white rate has edged down since the mid-2010s. The Black rate fell to
-its lowest in 2020 and 2021 and then rose again. Throughout, the Black rate
-has stayed a little more than twice the white rate.
-
 ## What these figures can't tell
 
 - **Association, not causation.** Poverty is one of many ways counties
@@ -451,9 +309,6 @@ has stayed a little more than twice the white rate.
 - **Estimates carry error.** The ACS poverty rate is a survey estimate
   with a margin of error, larger in small counties; a county near a group
   boundary could sit in either.
-- **Race is recorded twice.** Deaths carry the infant's race from the death
-  certificate and births the mother's from the birth certificate, so a
-  group's rate can be biased where the two differ.
 - **Small counts swing.** A county's rate on a few deaths says little on
   its own; group and pool before comparing places.
 - **Infant mortality has many causes.** The dataset's `cause` and
