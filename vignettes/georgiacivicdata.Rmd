@@ -13,9 +13,12 @@ vignette: >
 vignettes/precompile.R. It calls the live API, which CRAN builds can't. -->
 
 georgiacivicdata reads the [Georgia Civic Data](https://georgiacivicdata.org)
-API: cleaned public data about Georgia's schools and communities. This
-article walks through the everyday workflow: find a dataset, understand it,
-get its rows, and cite it.
+API: cleaned public data about Georgia's schools and communities. The
+[home page](https://georgiacivicdata.org/r/) walks through the basic
+workflow (search for a dataset, read its columns, get its rows, plot them
+and cite them) with Fulton County's graduation rate. This article covers
+what that example leaves out: how to narrow the catalog, how names and
+filters work, and the rules of the data that are easy to get wrong.
 
 
 ``` r
@@ -23,24 +26,7 @@ library(georgiacivicdata)
 library(dplyr)
 ```
 
-## Find data
-
-`gcd_search()` ranks datasets from plain words, in English or Spanish:
-
-
-``` r
-gcd_search("students missing a lot of school", n = 5) |>
-  select(rank, name, title, year_min, year_max)
-#> ℹ Lookup tables that match: "schools" and "districts". See `gcd_dimension()`.
-#> # A tibble: 5 × 5
-#>    rank name              title                                year_min year_max
-#>   <int> <chr>             <chr>                                   <int>    <int>
-#> 1     1 attendance        Student Attendance and Chronic Abse…     2004     2025
-#> 2     2 dropout_rate_7_12 Grade 7-12 Dropout Rates                 2011     2025
-#> 3     3 dropout_rate_9_12 Grades 9-12 Dropout Rates                2011     2025
-#> 4     4 retained_students Retained (Held-Back) K-12 Students       2004     2025
-#> 5     5 school_enrollment School Enrollment of Children (ACS)      2020     2024
-```
+## Browse the catalog
 
 `gcd_datasets()` is the whole catalog, one row per dataset. Every argument
 narrows it on the server:
@@ -49,7 +35,7 @@ narrows it on the server:
 ``` r
 catalog <- gcd_datasets()
 count(catalog, main_topic, kind)
-#> # A tibble: 5 × 3
+#> # A tibble: 5 x 3
 #>   main_topic  kind         n
 #>   <chr>       <chr>    <int>
 #> 1 census      table       28
@@ -60,7 +46,7 @@ count(catalog, main_topic, kind)
 
 gcd_datasets(main_topic = "education", level = "districts", year = 2025) |>
   select(name, title)
-#> # A tibble: 51 × 2
+#> # A tibble: 51 x 2
 #>    name                                     title                               
 #>    <chr>                                    <chr>                               
 #>  1 ccrpi_content_mastery                    CCRPI Content Mastery               
@@ -68,15 +54,15 @@ gcd_datasets(main_topic = "education", level = "districts", year = 2025) |>
 #>  3 ccrpi_progress                           CCRPI Progress                      
 #>  4 ccrpi_readiness                          CCRPI Readiness                     
 #>  5 ccrpi_scoring_by_component               CCRPI Scores and Components         
-#>  6 enrollment_by_grade                      Enrollment by Grade Level (Fall and…
+#>  6 enrollment_by_grade                      Enrollment by Grade Level (Fall and~
 #>  7 enrollment_march_gender_race_ethnicity   March Enrollment by Race and Gender 
-#>  8 enrollment_october_disability            Special Education Enrollment by Dis…
-#>  9 enrollment_october_gender_race_ethnicity October Enrollment by Race and Gend…
-#> 10 free_reduced_lunch                       Free and Reduced-Price Lunch Eligib…
-#> # ℹ 41 more rows
+#>  8 enrollment_october_disability            Special Education Enrollment by Dis~
+#>  9 enrollment_october_gender_race_ethnicity October Enrollment by Race and Gend~
+#> 10 free_reduced_lunch                       Free and Reduced-Price Lunch Eligib~
+#> # i 41 more rows
 ```
 
-## Understand a dataset
+## Read a dataset's notes
 
 `gcd_describe()` prints what a dataset holds, where it comes from, its
 years and detail levels, the columns that identify a row (its *grain*) and
@@ -85,7 +71,7 @@ the notes its data contract declares:
 
 ``` r
 gcd_describe("graduation_rate_4_year_cohort")
-#> ── Four-Year Cohort Graduation Rate (graduation_rate_4_year_cohort) ────────────
+#> -- Four-Year Cohort Graduation Rate (graduation_rate_4_year_cohort) ------------
 #> Share of the four-year high school cohort that graduated, by school, district,
 #> and state and demographic subgroup, 2004-2025.
 #> 
@@ -95,17 +81,18 @@ gcd_describe("graduation_rate_4_year_cohort")
 #> Detail levels: districts, schools (default), states
 #> Grain: year, district_code, school_code, demographic
 #> Key metric: graduation_rate
-#> Columns: 7 (see `$columns`); filters: 18 (see `$filters`)
+#> Columns: 7, plus 6 joined name columns (see `$columns`); filters: 18 (see
+#> `$filters`)
 #> 
-#> ── Notes ───────────────────────────────────────────────────────────────────────
+#> -- Notes -----------------------------------------------------------------------
 #> * Missing values: NA means suppressed (small counts), not zero; zeros are real
 #>   from 2010 on.
 #> * Limitations: 2004-2010 figures predate Georgia's adoption of the federal
 #>   four-year adjusted-cohort methodology (ACGR, first reported 2011) and use the
 #>   state's earlier leaver-based rate; the 2010->2011 state rate drop (~81% to
-#>   ~67%) is a methodology break, not a real decline — do not trend across it.
+#>   ~67%) is a methodology break, not a real decline <U+2014> do not trend across it.
 #>   Suppressed cells are NULL (not zero) from 2010 onward, but 2004-2009 sources
-#>   use literal ZEROS for suppressed cells — a zero rate/count in those years may
+#>   use literal ZEROS for suppressed cells <U+2014> a zero rate/count in those years may
 #>   be real or suppressed and cannot be distinguished; treat very small cohorts
 #>   in 2004-2009 with caution. num_cohort is NULL for every row in 2012-2016 (the
 #>   source publishes no denominator in those years). The 2004 file lists every
@@ -117,7 +104,7 @@ gcd_describe("graduation_rate_4_year_cohort")
 #>   least one published school value, 468 publish a district num_graduates below
 #>   the sum of its school rows, 49 of them among the 4,039 all-students rows
 #>   (source-published, 2005-2025; e.g. 2016 Whitfield 709 vs 810, 2014 Richmond
-#>   economically_disadvantaged 582 vs 1,286) — use the official district/state
+#>   economically_disadvantaged 582 vs 1,286) <U+2014> use the official district/state
 #>   rows for rollups rather than summing school rows. economically_disadvantaged
 #>   is not a like-for-like group across years. Statewide it is 55-56% of the
 #>   cohort in 2017-2021, then 47% (2022), 53% (2023), 61% (2024) and 66% (2025),
@@ -128,7 +115,7 @@ gcd_describe("graduation_rate_4_year_cohort")
 #>   2021-2023 (0-2 a year in 2016-2020). GOEWS does not document these shifts.
 #>   The group's graduation rate moves when its membership does, so check its
 #>   share of the cohort before comparing it across years or districts. The race
-#>   axis uses the combined asian_pacific_islander bucket — not comparable
+#>   axis uses the combined asian_pacific_islander bucket <U+2014> not comparable
 #>   row-for-row with split-convention topics without aggregating those topics'
 #>   asian + pacific_islander rows at query time. State rows have NULL
 #>   district_code and school_code; district rows have NULL school_code.
@@ -137,25 +124,6 @@ gcd_describe("graduation_rate_4_year_cohort")
 #>   leaver-based count, so the state rate falls from 0.808 (2010) to 0.675 (2011)
 #>   and the cohort rises from 113,364 to 131,012 because the method changed, not
 #>   because fewer students graduated.
-```
-
-`gcd_columns()` is the column dictionary. For each metric it gives the
-unit and, for counts, whether it is a rate's numerator or denominator:
-
-
-``` r
-gcd_columns("graduation_rate_4_year_cohort") |>
-  select(column, type, role, unit, metric_component)
-#> # A tibble: 7 × 5
-#>   column          type    role           unit       metric_component
-#>   <chr>           <chr>   <chr>          <chr>      <chr>           
-#> 1 year            integer year           <NA>       <NA>            
-#> 2 district_code   string  fk_district    <NA>       <NA>            
-#> 3 school_code     string  fk_school      <NA>       <NA>            
-#> 4 demographic     string  fk_demographic <NA>       <NA>            
-#> 5 num_graduates   integer metric         count      numerator       
-#> 6 num_cohort      integer metric         count      denominator     
-#> 7 graduation_rate number  metric         proportion <NA>
 ```
 
 Some categorical columns have no total. `gcd_describe()` lists them under
@@ -168,7 +136,7 @@ d <- gcd_describe("ccrpi_content_mastery")
 d$filters |>
   filter(kind == "categorical") |>
   select(param, has_total, requires_single_value)
-#> # A tibble: 4 × 3
+#> # A tibble: 4 x 3
 #>   param           has_total requires_single_value
 #>   <chr>           <lgl>     <lgl>                
 #> 1 grade_cluster   FALSE     TRUE                 
@@ -177,13 +145,7 @@ d$filters |>
 #> 4 ccrpi_flag      FALSE     FALSE
 ```
 
-## Get rows
-
-`gcd_rows()` returns a tibble typed from the schema. Codes stay character
-(leading zeros survive), years are integers, and proportions stay on the 0-1
-scale. Every place comes with its name beside its code.
-
-### By name or by code
+## Filter by name or by code
 
 Name a district, school or county and the package turns it into a code.
 Names match exactly, ignoring case, accents and a trailing "County", and
@@ -191,29 +153,28 @@ former names work too:
 
 
 ``` r
-riverwood <- gcd_rows(
+gcd_rows(
   "graduation_rate_4_year_cohort",
   district = "Fulton County",
   school = "Riverwood High School",   # a former name
   demographic = "all",
   year = 2021:2025
-)
-#> ℹ Demographic groups overlap across categories and may overlap within a
+) |>
+  select(year, district_code, school_code, school_name, graduation_rate)
+#> i Demographic groups overlap across categories and may overlap within a
 #>   category (active_duty can be a subset of military_connected). Read the
 #>   dataset's definitions and non_additive declarations. Use the published `all`
 #>   total when available, never add it to its subgroups. Counts reconcile only
 #>   for complete, disjoint groups; subgroup rates generally do not add to the
 #>   overall rate.
-riverwood |>
-  select(year, district_code, school_code, school_name, graduation_rate)
-#> # A tibble: 5 × 5
+#> # A tibble: 5 x 5
 #>    year district_code school_code school_name                    graduation_rate
 #>   <int> <chr>         <chr>       <chr>                                    <dbl>
-#> 1  2021 660           3066        Riverwood International Chart…           0.934
-#> 2  2022 660           3066        Riverwood International Chart…           0.975
-#> 3  2023 660           3066        Riverwood International Chart…           0.969
-#> 4  2024 660           3066        Riverwood International Chart…           0.988
-#> 5  2025 660           3066        Riverwood International Chart…           0.971
+#> 1  2021 660           3066        Riverwood International Chart~           0.934
+#> 2  2022 660           3066        Riverwood International Chart~           0.975
+#> 3  2023 660           3066        Riverwood International Chart~           0.969
+#> 4  2024 660           3066        Riverwood International Chart~           0.988
+#> 5  2025 660           3066        Riverwood International Chart~           0.971
 ```
 
 A name that matches more than one place stops with the candidates instead
@@ -226,9 +187,9 @@ gcd_rows("graduation_rate_4_year_cohort", school = "Milton High School",
          district = "Fulton County")
 #> Error in `gcd_rows()`:
 #> ! "Milton High School" matches more than one school.
-#> ℹ Use `school_id` with one "DISTRICT-SCHOOL" code.
-#> • 660-0106: Milton High School (Fulton County, active)
-#> • 660-2060: Milton High School (Fulton County, inactive)
+#> i Use `school_id` with one "DISTRICT-SCHOOL" code.
+#> * 660-0106: Milton High School (Fulton County, active)
+#> * 660-2060: Milton High School (Fulton County, inactive)
 ```
 
 Codes work everywhere names do. A school is identified by its district and
@@ -239,13 +200,13 @@ school codes together, written `"DISTRICT-SCHOOL"` in `school_id`:
 gcd_rows("graduation_rate_4_year_cohort", school_id = "660-0106",
          demographic = "all", year = 2025, quiet = TRUE) |>
   select(year, school_code, school_name, num_graduates, num_cohort, graduation_rate)
-#> # A tibble: 1 × 6
+#> # A tibble: 1 x 6
 #>    year school_code school_name        num_graduates num_cohort graduation_rate
 #>   <int> <chr>       <chr>                      <int>      <int>           <dbl>
 #> 1  2025 0106        Milton High School           502        522           0.962
 ```
 
-### Years and detail levels
+## Years and detail levels
 
 `year = 2021:2025` asks for a range; `year = c(2015, 2025)` asks for those
 two years only. Each call returns one **detail level**: schools, districts,
@@ -258,17 +219,17 @@ empty at a level are left out:
 state <- gcd_rows("graduation_rate_4_year_cohort", detail = "states",
                   demographic = "all", year = c(2015, 2025), quiet = TRUE)
 state
-#> # A tibble: 2 × 7
+#> # A tibble: 2 x 7
 #>    year demographic demographic_label demographic_category num_graduates
 #>   <int> <chr>       <chr>             <chr>                        <int>
 #> 1  2015 all         All               aggregate                    98465
 #> 2  2025 all         All               aggregate                   123911
-#> # ℹ 2 more variables: num_cohort <int>, graduation_rate <dbl>
+#> # i 2 more variables: num_cohort <int>, graduation_rate <dbl>
 ```
 
 To combine levels, call once per level and bind the rows.
 
-### What `NA` means
+## What `NA` means
 
 A missing metric usually means the value was **suppressed** to protect
 privacy (small counts), **not zero**. The schema's `null_semantics` says
@@ -279,21 +240,21 @@ suppressed values:
 ``` r
 small <- gcd_rows("graduation_rate_4_year_cohort", district = "Appling County",
                   year = 2024, detail = "districts")
-#> ℹ This result contains NULL metric cells, which mean the value was SUPPRESSED
+#> i This result contains NULL metric cells, which mean the value was SUPPRESSED
 #>   (small counts), not zero — do not report or chart a NULL as 0 (see
 #>   null_semantics and each column's null_meaning).
-#> ℹ Demographic groups overlap across categories and may overlap within a
+#> i Demographic groups overlap across categories and may overlap within a
 #>   category (active_duty can be a subset of military_connected). Read the
 #>   dataset's definitions and non_additive declarations. Use the published `all`
 #>   total when available, never add it to its subgroups. Counts reconcile only
 #>   for complete, disjoint groups; subgroup rates generally do not add to the
 #>   overall rate.
-#> ℹ `district_census_id` is a 5-digit Census school-district code, NOT a county
+#> i `district_census_id` is a 5-digit Census school-district code, NOT a county
 #>   FIPS, and a district is not 1:1 with a county — do not map these district
 #>   rows as counties.
 small |>
   select(demographic, num_graduates, num_cohort, graduation_rate)
-#> # A tibble: 18 × 4
+#> # A tibble: 18 x 4
 #>    demographic                    num_graduates num_cohort graduation_rate
 #>    <chr>                                  <int>      <int>           <dbl>
 #>  1 active_duty                               NA         NA          NA    
@@ -319,7 +280,7 @@ small |>
 The advisories stay with the result in `gcd_meta(small)$advisories`;
 `quiet = TRUE` (or `options(gcd.quiet = TRUE)`) silences the messages.
 
-### Totals beside subgroups
+## Totals beside subgroups
 
 Nothing is pinned by default, so a result holds the `all` total beside every
 subgroup, and subgroups from different categories overlap (a student is in
@@ -336,7 +297,7 @@ fulton |>
     published_total = num_cohort[demographic == "all"],
     sum_of_every_row = sum(num_cohort, na.rm = TRUE)
   )
-#> # A tibble: 1 × 2
+#> # A tibble: 1 x 2
 #>   published_total sum_of_every_row
 #>             <int>            <int>
 #> 1            7934            39902
@@ -345,7 +306,7 @@ fulton |>
 Use the published `all` row for totals, and filter one category
 (`demographic_category = "race"`) to compare groups.
 
-### Which values exist: `gcd_values()`
+## Which values exist: `gcd_values()`
 
 When a filter returns nothing, `gcd_values()` shows which combinations
 exist under the other filters, with row counts, without downloading rows:
@@ -354,7 +315,7 @@ exist under the other filters, with row counts, without downloading rows:
 ``` r
 gcd_values("ccrpi_content_mastery", c("grade_cluster", "subject"),
            year = 2025, detail = "districts")
-#> # A tibble: 11 × 3
+#> # A tibble: 11 x 3
 #>    grade_cluster subject               n_rows
 #>    <chr>         <chr>                  <int>
 #>  1 elementary    english_language_arts   2340
@@ -372,75 +333,22 @@ gcd_values("ccrpi_content_mastery", c("grade_cluster", "subject"),
 
 ## Lookup tables
 
-The six lookup tables (`districts`, `schools`, `counties`, `tracts`,
-`block_groups`, `demographics`) hold more than names: school addresses,
-coordinates, grade spans, locale and charter status, tract populations.
-`gcd_dimension()` returns them:
+There are six lookup tables: `districts`, `schools`, `counties`, `tracts`,
+`block_groups` and `demographics`. `gcd_dimension()` returns any of them.
+**School codes repeat across districts**, so join schools on
+`district_code` and `school_code` together, never `school_code` alone:
 
 
 ``` r
-schools <- gcd_dimension("schools",
-                         columns = c("district_code", "school_code", "locale"))
-schools
-#> # A tibble: 4,372 × 3
-#>    district_code school_code locale
-#>    <chr>         <chr>       <chr> 
-#>  1 601           0103        town  
-#>  2 601           0109        rural 
-#>  3 601           0177        town  
-#>  4 601           0195        rural 
-#>  5 601           0277        <NA>  
-#>  6 601           1050        rural 
-#>  7 601           2050        <NA>  
-#>  8 601           5050        rural 
-#>  9 601           6412        <NA>  
-#> 10 601           6701        town  
-#> # ℹ 4,362 more rows
-```
-
-**School codes repeat across districts**, so always join on both codes:
-
-
-``` r
-schools |> count(school_code, sort = TRUE) |> head(3)
-#> # A tibble: 3 × 2
+gcd_dimension("schools", columns = c("district_code", "school_code")) |>
+  count(school_code, sort = TRUE) |>
+  head(3)
+#> # A tibble: 3 x 2
 #>   school_code     n
 #>   <chr>       <int>
 #> 1 8010          198
 #> 2 8012          175
 #> 3 8013          166
-
-high_schools <- gcd_rows("graduation_rate_4_year_cohort", detail = "schools",
-                         demographic = "all", year = 2025, quiet = TRUE) |>
-  left_join(schools, by = c("district_code", "school_code"))
-
-high_schools |>
-  filter(!is.na(locale)) |>
-  group_by(locale) |>
-  summarise(schools = n(),
-            graduation_rate = sum(num_graduates, na.rm = TRUE) /
-              sum(num_cohort[!is.na(num_graduates)], na.rm = TRUE))
-#> # A tibble: 4 × 3
-#>   locale schools graduation_rate
-#>   <chr>    <int>           <dbl>
-#> 1 city        95           0.874
-#> 2 rural      183           0.905
-#> 3 suburb     174           0.877
-#> 4 town        70           0.932
-```
-
-That last step pools the rate from its counts. Averaging rates
-(`mean(graduation_rate)`) would weigh a school of 40 like a school of 2,000.
-
-## Cite the data
-
-The data is CC BY 4.0. `gcd_citation()` writes the credit, from a result
-or a dataset name:
-
-
-``` r
-gcd_citation(riverwood)
-#> [1] "Four-Year Cohort Graduation Rate. Georgia Civic Data (georgiacivicdata.org), CC BY 4.0. https://georgiacivicdata.org/api/v1/datasets/graduation_rate_4_year_cohort. Original source: Governor's Office of Education and Workforce Strategy (GOEWS, formerly GOSA)."
 ```
 
 ## Caching
